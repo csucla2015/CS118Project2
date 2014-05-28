@@ -1,5 +1,4 @@
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -35,8 +34,7 @@ int main(void)
     char buf[MAXBUFLEN];
     socklen_t addr_len;
     char s[INET6_ADDRSTRLEN];
-    struct packet request;
-    struct packet response;
+
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_UNSPEC; // set to AF_INET to force IPv4
     hints.ai_socktype = SOCK_DGRAM;
@@ -74,41 +72,21 @@ int main(void)
     printf("listener: waiting to recvfrom...\n");
 
     addr_len = sizeof their_addr;
-    if ((numbytes = recvfrom(sockfd, &request, sizeof(request) , 0,
+    if ((numbytes = recvfrom(sockfd, buf, MAXBUFLEN-1 , 0,
         (struct sockaddr *)&their_addr, &addr_len)) == -1) {
         perror("recvfrom");
         exit(1);
     }
-	
-   /* printf("listener: got packet from %s\n",
+
+    printf("listener: got packet from %s\n",
         inet_ntop(their_addr.ss_family,
             get_in_addr((struct sockaddr *)&their_addr),
             s, sizeof s));
     printf("listener: packet is %d bytes long\n", numbytes);
     buf[numbytes] = '\0';
     printf("listener: packet contains \"%s\"\n", buf);
-*/
-    bzero((char *) &response, sizeof(response));
-    FILE* req_file = fopen(request.data,"rb");
-    close(sockfd); 
-    struct stat s1;
-    stat(request.data, &s1);
-    response.content_len = s1.st_size;     
-    fread(response.data, 1, s1.st_size, req_file);
-           
-    if (sendto(sockfd, &response, 12 + s1.st_size, 0, (struct sockaddr *) &their_addr, addr_len) < 0)
-                error("ERROR on sending");
+
+    close(sockfd);
 
     return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
