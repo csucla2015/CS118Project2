@@ -17,9 +17,9 @@ int main(int argc, char *argv[])
     struct addrinfo hints, *servinfo, *p;
     int rv;
     int numbytes;
-
+    struct packet request;
     if (argc != 3) {
-        fprintf(stderr,"usage: talker hostname message\n");
+        fprintf(stderr,"usage: talker hostname filename\n");
         exit(1);
     }
 
@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
         return 1;
     }
-
+	
     // loop through all the results and make a socket
     for(p = servinfo; p != NULL; p = p->ai_next) {
         if ((sockfd = socket(p->ai_family, p->ai_socktype,
@@ -47,12 +47,23 @@ int main(int argc, char *argv[])
         fprintf(stderr, "talker: failed to bind socket\n");
         return 2;
     }
-
-    if ((numbytes = sendto(sockfd, argv[2], strlen(argv[2]), 0,
+    bzero((char *) &request, sizeof(response)); // Change if it causes bugs.
+    request.data = argv[2];
+    if ((numbytes = sendto(sockfd, request, sizeof(request), 0,
              p->ai_addr, p->ai_addrlen)) == -1) {
         perror("talker: sendto");
         exit(1);
     }
+    
+    struct packet response;
+    rspd_pkt.length = DATA_SIZE;
+
+    FILE* rec_file = fopen(strcat(argv[2], "_copy"), "wb");
+
+    bzero((char *) &response, sizeof(response));
+    response.length = sizeof(int) * 3;
+
+    
 
     freeaddrinfo(servinfo);
 
