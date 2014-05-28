@@ -10,6 +10,13 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <fcntl.h>
+#include <time.h>
+#include "packet.c"
 
 #define MYPORT "4950"    // the port users will be connecting to
 
@@ -69,9 +76,10 @@ int main(void)
         return 2;
     }
 
-    freeaddrinfo(servinfo);
+  //  freeaddrinfo(servinfo);
 
     printf("listener: waiting to recvfrom...\n");
+        bzero((char *) &request, sizeof(request));
 
     addr_len = sizeof their_addr;
     if ((numbytes = recvfrom(sockfd, &request, sizeof(request) , 0,
@@ -79,7 +87,8 @@ int main(void)
         perror("recvfrom");
         exit(1);
     }
-	
+	    printf("listener: waiting to recvfrom1...\n");
+
    /* printf("listener: got packet from %s\n",
         inet_ntop(their_addr.ss_family,
             get_in_addr((struct sockaddr *)&their_addr),
@@ -89,8 +98,7 @@ int main(void)
     printf("listener: packet contains \"%s\"\n", buf);
 */
     bzero((char *) &response, sizeof(response));
-    FILE* req_file = fopen(request.data,"rb");
-    close(sockfd); 
+    FILE* req_file = fopen(request.data,"r");
     struct stat s1;
     stat(request.data, &s1);
     response.content_len = s1.st_size;     
@@ -99,6 +107,8 @@ int main(void)
     if (sendto(sockfd, &response, 12 + s1.st_size, 0, (struct sockaddr *) &their_addr, addr_len) < 0)
                 error("ERROR on sending");
 
+    close(sockfd); 
+        
     return 0;
 }
 

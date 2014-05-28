@@ -8,6 +8,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include "packet.c"
 
 #define SERVERPORT "4950"    // the port users will be connecting to
 
@@ -47,24 +48,31 @@ int main(int argc, char *argv[])
         fprintf(stderr, "talker: failed to bind socket\n");
         return 2;
     }
-    bzero((char *) &request, sizeof(response)); // Change if it causes bugs.
-    request.data = argv[2];
-    if ((numbytes = sendto(sockfd, request, sizeof(request), 0,
+    bzero((char *) &request, sizeof(request)); // Change if it causes bugs.
+    strcpy(request.data,argv[2]);
+    printf("%s",request.data);    
+
+    if ((numbytes = sendto(sockfd, &request, sizeof(request), 0,
              p->ai_addr, p->ai_addrlen)) == -1) {
         perror("talker: sendto");
         exit(1);
     }
     
     struct packet response;
-    rspd_pkt.length = DATA_SIZE;
-
-    FILE* rec_file = fopen(strcat(argv[2], "_copy"), "wb");
+    //rspd_pkt.length = DATA_SIZE;
+    char* c = "copy_";
+    int len = strlen(argv[2]);
+    char buf[len+6];
+    snprintf(buf, sizeof(buf), "%s%s", c, argv[2]);
+    FILE* rec_file = fopen(buf, "w");
 
     bzero((char *) &response, sizeof(response));
-    response.length = sizeof(int) * 3;
+    response.content_len = sizeof(int) * 3;
 
+      if (recvfrom(sockfd, &response, sizeof(response), 0, p->ai_addr, &p->ai_addrlen)) 
+            printf("Packet lost!\n");    
     
-
+    fwrite(response.data,1,7,rec_file); 
     freeaddrinfo(servinfo);
 
     printf("talker: sent %d bytes to %s\n", numbytes, argv[1]);
