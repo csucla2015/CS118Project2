@@ -1,0 +1,8 @@
+struct packet
+{
+  int ack_no;
+  int fin_no;
+  int fin;
+  int content_len;
+  char data[128];
+};
