@@ -1,12 +1,12 @@
-CC=gcc
+CC=g++
 
 all: server client
 
-server: server.c
-	$(CC) server.c -o server
+server: server.cpp
+	$(CC) server.cpp -o server
 
-client: client.c
-	$(CC) client.c -o client
+client: client.cpp
+	$(CC) client.cpp -o client
 
 .PHONY: clean
 

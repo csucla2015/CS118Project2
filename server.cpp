@@ -12,11 +12,12 @@
 #include <netdb.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <netinet/in.h>
 #include <netdb.h>
 #include <fcntl.h>
 #include <time.h>
-#include "packet.c"
+#include "packet.cpp"
 
 #define MYPORT "4950"    // the port users will be connecting to
 
@@ -98,9 +99,12 @@ int main(void)
     printf("listener: packet contains \"%s\"\n", buf);
 */
     bzero((char *) &response, sizeof(response));
+
     FILE* req_file = fopen(request.data,"r");
+
     struct stat s1;
     stat(request.data, &s1);
+
    
     response.content_len = s1.st_size; 
      printf("size of file requested : %d",response.content_len); 
@@ -109,6 +113,7 @@ int main(void)
            
     if (sendto(sockfd, &response,1024, 0, (struct sockaddr *) &their_addr, addr_len) < 0)
                 error("ERROR on sending");
+
 
     close(sockfd); 
         

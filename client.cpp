@@ -8,12 +8,19 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+
 #include "packet.c"
 #include "helper.h"
+
+#include "packet.cpp"
+#include <sys/stat.h>
+
+
 #define SERVERPORT "4950"    // the port users will be connecting to
 
 int main(int argc, char *argv[])
 {
+
     int sockfd;
     struct addrinfo hints, *servinfo, *p;
     int rv;
@@ -48,8 +55,10 @@ int main(int argc, char *argv[])
         fprintf(stderr, "talker: failed to bind socket\n");
         return 2;
     }
+
     initPacket(&request);
     strncpy(request.data,argv[2],1004);
+
     printf("%s",request.data);    
 
     if ((numbytes = sendto(sockfd, &request, 1024, 0,
