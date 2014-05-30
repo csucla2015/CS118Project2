@@ -17,7 +17,7 @@
 #include <netdb.h>
 #include <fcntl.h>
 #include <time.h>
-#include "packet.cpp"
+#include "packet.h"
 
 #define MYPORT "4950"    // the port users will be connecting to
 
@@ -112,7 +112,7 @@ int main(void)
     fread(response.data, 1, s1.st_size, req_file);
            
     if (sendto(sockfd, &response,1024, 0, (struct sockaddr *) &their_addr, addr_len) < 0)
-                error("ERROR on sending");
+                //error("ERROR on sending");
 
 
     close(sockfd); 

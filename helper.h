@@ -6,6 +6,10 @@
 #include <stdlib.h>
 #include <strings.h>
 #include <sys/time.h>
+#include "packet.h"
+
+
+
 
 void initPacket(struct packet * pkt)
 {

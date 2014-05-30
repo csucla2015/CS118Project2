@@ -9,10 +9,10 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#include "packet.c"
+//#include "packet.c"
 #include "helper.h"
 
-#include "packet.cpp"
+#include "packet.h"
 #include <sys/stat.h>
 
 
@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
     struct addrinfo hints, *servinfo, *p;
     int rv;
     int numbytes;
-    struct packet request;
+    packet request;
     if (argc != 3) {
         fprintf(stderr,"usage: talker hostname filename\n");
         exit(1);
@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
     }
     
     //variable for receiving response
-    struct packet response;
+    packet response;
     //rspd_pkt.length = DATA_SIZE;
 
 
