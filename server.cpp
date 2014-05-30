@@ -104,12 +104,16 @@ int main(void)
 
     struct stat s1;
     stat(request.data, &s1);
-    
-    response.content_len = s1.st_size;     
+
+   
+    response.content_len = s1.st_size; 
+     printf("size of file requested : %d",response.content_len); 
+    response.size =    s1.st_size;
     fread(response.data, 1, s1.st_size, req_file);
            
-    if (sendto(sockfd, &response, 12 + s1.st_size, 0, (struct sockaddr *) &their_addr, addr_len) < 0)
-              //  error("ERROR on sending");
+    if (sendto(sockfd, &response,1024, 0, (struct sockaddr *) &their_addr, addr_len) < 0)
+                error("ERROR on sending");
+
 
     close(sockfd); 
         
