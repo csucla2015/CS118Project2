@@ -15,7 +15,6 @@
 
 int main(int argc, char *argv[])
 {
-
     int sockfd;
     struct addrinfo hints, *servinfo, *p;
     int rv;
@@ -56,33 +55,39 @@ int main(int argc, char *argv[])
     //place file name being requested into request.data
     strcpy(request.data,argv[2]);
 
-
     printf("%s",request.data);    
 
+    //send initial request over for the file
     if ((numbytes = sendto(sockfd, &request, sizeof(request), 0,
              p->ai_addr, p->ai_addrlen)) == -1) {
         perror("talker: sendto");
         exit(1);
     }
     
+    //variable for receiving response
     struct packet response;
     //rspd_pkt.length = DATA_SIZE;
+
+
+    //creating a file name with copy_ appended to the front
     char* c = "copy_";
     int len = strlen(argv[2]);
     char buf[len+6];
     snprintf(buf, sizeof(buf), "%s%s", c, argv[2]);
     FILE* rec_file = fopen(buf, "w");
 
-    bzero((char *) &response, sizeof(response));
+    //clear the response struct
+    bzero((char *) &response, sizeof(response)); 
+
     response.content_len = sizeof(int) * 3;
 
-      if (recvfrom(sockfd, &response, sizeof(response), 0, p->ai_addr, &p->ai_addrlen)) 
-            printf("Packet lost!\n");    
+    if (recvfrom(sockfd, &response, sizeof(response), 0, p->ai_addr, &p->ai_addrlen) < 0) 
+        printf("Packet lost!\n");    
     
     fwrite(response.data,1,7,rec_file); 
     freeaddrinfo(servinfo);
 
-    printf("talker: sent %d bytes to %s\n", numbytes, argv[1]);
+    //printf("talker: sent %d bytes to %s\n", numbytes, argv[1]);
     close(sockfd);
 
     return 0;
