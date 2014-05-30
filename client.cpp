@@ -8,18 +8,24 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-
-//#include "packet.c"
-#include "helper.h"
-
+#include <fcntl.h>
+#include <iomanip>
+#include <fstream>
+#include <iostream>
+#include <time.h>
 #include "packet.h"
-#include <sys/stat.h>
+#include "helper.h"
+using namespace std;
 
+
+#include <sys/stat.h>
 
 #define SERVERPORT "4950"    // the port users will be connecting to
 
 int main(int argc, char *argv[])
 {
+            cout <<"We reach here3";
+
     int sockfd;
     struct addrinfo hints, *servinfo, *p;
     int rv;
@@ -38,7 +44,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
         return 1;
     }
-	
+    
     // loop through all the results and make a socket
     for(p = servinfo; p != NULL; p = p->ai_next) {
         if ((sockfd = socket(p->ai_family, p->ai_socktype,
@@ -55,6 +61,7 @@ int main(int argc, char *argv[])
         return 2;
     }
 
+        cout <"We reach here0";
 
     initPacket(&request);
     strncpy(request.data,argv[2],1004);
@@ -80,14 +87,46 @@ int main(int argc, char *argv[])
     snprintf(buf, sizeof(buf), "%s%s", c, argv[2]);
     FILE* rec_file = fopen(buf, "wb");
 
+            cout <"We reach here1";
+    fprintf (stderr, "waiting for message \n");
+    struct packet incoming;
+    struct packet outgoing;
+    initPacket(&incoming);
+    initPacket(&outgoing);
+    outgoing.ack_no = 1;
+    int cumAck = 0;    
+    int nbytes = 0;
+    while(1) {
 
-    initPacket(&response);
+        //wait for a packet
+        if( nbytes = recvfrom(sockfd, &incoming, 1024, 0, 
+                               p->ai_addr, &p->ai_addrlen) < 0)
+        {
+            cout << "recvfrom failed";
+        }
+        
+        if (incoming.ack_no == 1) 
+        {
+            //first pkt is ack of request
+           
+        }
+        else if (incoming.fin == 1)
+        {
+            //terminate connection
+            
+            fclose(rec_file);
+            break;
+        } 
+        else  
+        {
+             fwrite(incoming.data,1,incoming.size,rec_file);  
+        }
+    }   
 
-      if (recvfrom(sockfd, &response, 1024, 0, p->ai_addr, &p->ai_addrlen)) 
-            printf("Packet lost!\n");    
 
-    
-    fwrite(response.data,1,response.size,rec_file); 
+
+
+
     freeaddrinfo(servinfo);
 
     //printf("talker: sent %d bytes to %s\n", numbytes, argv[1]);
@@ -95,3 +134,4 @@ int main(int argc, char *argv[])
 
     return 0;
 }
+
