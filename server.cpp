@@ -1,5 +1,3 @@
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -22,10 +20,17 @@
 #include <time.h>
 #include "packet.h"
 #include "helper.h"
+
+#include <vector>
+
+
 using namespace std;
+
+
 #define DATAGRAM_SIZE 1024 // change
 #define TIMEOUT 10000 //
-#define MYPORT "4950"    // the port users will be connecting to
+#define MYPORT "5100"    // the port users will be connecting to
+
 
 #define MAXBUFLEN 100
 
@@ -46,7 +51,7 @@ int main(void)
     struct addrinfo hints, *servinfo, *p;
     int rv;
     int numbytes;
-    struct packet packets[50]; // change
+
     struct sockaddr_storage their_addr;
     char buf[MAXBUFLEN];
     socklen_t addr_len;
@@ -58,7 +63,14 @@ int main(void)
     hints.ai_socktype = SOCK_DGRAM;
     hints.ai_flags = AI_PASSIVE; // use my IP
 
-                   int nbytes = 0;
+    int window_size = 5;
+    struct packet packets[window_size]; // change
+
+    vector<packet> packet_vec;
+    //packet_vec.resize(5);
+
+
+    int nbytes = 0;
 
     if ((rv = getaddrinfo(NULL, MYPORT, &hints, &servinfo)) != 0) {
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
@@ -105,55 +117,92 @@ int main(void)
     cout << fileName;
     //////////////////////////////////////////////////////
     printf("listener: got packet from %s\n",
-        inet_ntop(their_addr.ss_family,
-            get_in_addr((struct sockaddr *)&their_addr),
-            s, sizeof s));
+    inet_ntop(their_addr.ss_family,
+        get_in_addr((struct sockaddr *)&their_addr),
+        s, sizeof s));
     printf("listener: packet is %d bytes long\n", numbytes);
     buf[numbytes] = '\0';
     printf("listener: packet contains \"%s\"\n", buf);
 
-    ////////////This takes care of acknowledging the request//////
-     while(1) 
-     {
-        if( nbytes = sendto (sockfd, &response, 1024, 0,
-                (struct sockaddr *) &their_addr, addr_len) < 0)
-        {
-                if( errno == EWOULDBLOCK ) {
-                    continue;
-                }
-                printf("error: %d\n", errno);
-
-        }    
-        break;
-    }
-    /////// This takes care of oppening the file
-    //initPacket(&response);
     FILE* req_file = fopen(fileName,"rb");
     if (req_file == NULL) // open failed 
     {
         cout << "failed open file";
     }
     /////////////////////////////////////////////
+    //Send initial window_size packets
+    //////////////////////////////////////////////
     int base = 0;
     int packetsSent =0;
-    int windowSize = 50;
-    base = 1;
-    int k;
-    for(k = 0; k < windowSize; k++) 
-    {
 
+    base = 1;
+    int total_sequence = 0;
+    int k;
+    for(k = 0; k < window_size; k++) 
+    {
         // get the next chunk of the file
         struct packet p;
         initPacket(&p);
+        packet_vec.push_back(p);
 
-        p.seq_no = k+1;
+        p.seq_no = total_sequence+1;
+
         p.size = fread(p.data, 1, 1004, req_file);
         printf ("Sender: size is %d\n", p.size);
-        packets[k] = p;
 
-        //send the packet
-        while(1) {
-            if( nbytes = sendto (sockfd, &packets[k], DATAGRAM_SIZE, 0,
+        packet_vec[total_sequence] = p;
+
+        printf ("packet %d size %d\n", total_sequence, packet_vec[total_sequence].size);
+        if( nbytes = sendto (sockfd, &packet_vec[total_sequence], DATAGRAM_SIZE, 0,
+            (struct sockaddr *) &their_addr, addr_len) < 0)
+        {
+            if( errno == EWOULDBLOCK ) {
+                continue;
+            }
+            cout <<"sendto failed2";
+        }
+        total_sequence++;
+
+        if(feof(req_file) || ferror(req_file) ) 
+        {
+            //done reading file
+            break;
+        }
+   }
+
+   bool stop = false;
+
+   while(1) {
+
+        struct packet ack;
+        initPacket(&ack);
+
+        while(1){
+            if ((numbytes = recvfrom(sockfd, &ack, sizeof(ack) , 0,
+                (struct sockaddr *)&their_addr, &addr_len)) == -1) {
+                perror("recvfrom");
+                exit(1);
+            }
+            printf("Server: ack number %d receieved\n", ack.ack_no);
+
+            if(ack.ack_no == total_sequence){
+                break; //all are received
+            }
+        }
+        
+        for(int i = 0; i < window_size; i ++) {
+            struct packet p;
+            initPacket(&p);
+            packet_vec.push_back(p);
+
+            p.seq_no = total_sequence+1;
+            p.size = fread(p.data, 1, 1004, req_file);
+            printf ("Sender: size is %d\n", p.size);
+
+            packet_vec[total_sequence] = p;
+
+            printf ("packet %d size %d\n", total_sequence, packet_vec[total_sequence].size);
+            if( nbytes = sendto (sockfd, &packet_vec[total_sequence], DATAGRAM_SIZE, 0,
                 (struct sockaddr *) &their_addr, addr_len) < 0)
             {
                 if( errno == EWOULDBLOCK ) {
@@ -161,47 +210,41 @@ int main(void)
                 }
                 cout <<"sendto failed2";
             }
-            break;
-        }
-        packetsSent++;
+            total_sequence++;
 
-        if(feof(req_file) || ferror(req_file) ) 
-        {
-            //done reading file
-            break;
+
+            if(feof(req_file) || ferror(req_file) ) 
+            {
+                //done reading file
+                stop = true;
+                break;
+            }
         }
+
+        if(stop) break;
 
    }
-   
 
-        //if file is empty or done reading, terminate connection
-        if(feof(req_file)) 
+    fclose(req_file);
+    struct packet terminate;
+    initPacket(&terminate);
+    terminate.fin = 1;
+    //send the packet
+    while(1) 
+    {    
+        if( nbytes = sendto (sockfd, &terminate, DATAGRAM_SIZE, 0,
+               (struct sockaddr *) &their_addr, addr_len) < 0)
         {
-            
-                fclose(req_file);
-                struct packet terminate;
-                initPacket(&terminate);
-                terminate.fin = 1;
-                //send the packet
-                while(1) 
-                {    
-                    if( nbytes = sendto (sockfd, &terminate, DATAGRAM_SIZE, 0,
-                           (struct sockaddr *) &their_addr, addr_len) < 0)
-                    {
-                        if( errno == EWOULDBLOCK ) 
-                        {
-                            continue;
-                        }
-                        cout << "sendto failed1";
-                    }
-                    break;
-                }
-               
-              
-        }        
+            if( errno == EWOULDBLOCK ) 
+            {
+                continue;
+            }
+            cout << "sendto failed1";
+        }
+        break;
+    }
+      
            
-    
-
 
     close(sockfd); 
         

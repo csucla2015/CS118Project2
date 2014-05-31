@@ -20,11 +20,10 @@ using namespace std;
 
 #include <sys/stat.h>
 
-#define SERVERPORT "4950"    // the port users will be connecting to
+#define SERVERPORT "5100"    // the port users will be connecting to
 
 int main(int argc, char *argv[])
 {
-            cout <<"We reach here3";
 
     int sockfd;
     struct addrinfo hints, *servinfo, *p;
@@ -61,7 +60,7 @@ int main(int argc, char *argv[])
         return 2;
     }
 
-        cout <"We reach here0";
+       
 
     initPacket(&request);
     strncpy(request.data,argv[2],1004);
@@ -87,7 +86,7 @@ int main(int argc, char *argv[])
     snprintf(buf, sizeof(buf), "%s%s", c, argv[2]);
     FILE* rec_file = fopen(buf, "wb");
 
-            cout <"We reach here1";
+        
     fprintf (stderr, "waiting for message \n");
     struct packet incoming;
     struct packet outgoing;
@@ -96,6 +95,8 @@ int main(int argc, char *argv[])
     outgoing.ack_no = 1;
     int cumAck = 0;    
     int nbytes = 0;
+
+    int total_sequence = 0;
     while(1) {
 
         //wait for a packet
@@ -103,12 +104,6 @@ int main(int argc, char *argv[])
                                p->ai_addr, &p->ai_addrlen) < 0)
         {
             cout << "recvfrom failed";
-        }
-        
-        if (incoming.ack_no == 1) 
-        {
-            //first pkt is ack of request
-           
         }
         else if (incoming.fin == 1)
         {
@@ -120,7 +115,15 @@ int main(int argc, char *argv[])
         else  
         {
              fwrite(incoming.data,1,incoming.size,rec_file);  
-        }
+             struct packet ack;
+             initPacket(&ack);
+             ack.ack_no = incoming.seq_no;
+              if ((numbytes = sendto(sockfd, &ack, 1024, 0, p->ai_addr, p->ai_addrlen)) == -1) {
+                perror("talker: sendto");
+                exit(1);
+            }
+    
+          }
     }   
 
 
