@@ -112,12 +112,24 @@ int main(int argc, char *argv[])
             fclose(rec_file);
             break;
         } 
+        else if( incoming.seq_no != (total_sequence+1))
+        {   
+             struct packet ack;
+             initPacket(&ack);
+             ack.ack_no = total_sequence;
+              if ((numbytes = sendto(sockfd, &ack, 1024, 0, p->ai_addr, p->ai_addrlen)) == -1) {
+                perror("talker: sendto");
+                exit(1);
+            }
+
+        }
         else  
         {
              fwrite(incoming.data,1,incoming.size,rec_file);  
              struct packet ack;
              initPacket(&ack);
              ack.ack_no = incoming.seq_no;
+             total_sequence++;
               if ((numbytes = sendto(sockfd, &ack, 1024, 0, p->ai_addr, p->ai_addrlen)) == -1) {
                 perror("talker: sendto");
                 exit(1);
@@ -125,9 +137,6 @@ int main(int argc, char *argv[])
     
           }
     }   
-
-
-
 
 
     freeaddrinfo(servinfo);
