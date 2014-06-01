@@ -187,7 +187,7 @@ int main(void)
         struct packet ack;
         initPacket(&ack);
 
-        while(1){
+       // while(1){
             if ((numbytes = recvfrom(sockfd, &ack, sizeof(ack) , 0,
                 (struct sockaddr *)&their_addr, &addr_len)) == -1) {
                 perror("recvfrom");
@@ -201,11 +201,18 @@ int main(void)
             else
                 printf("Server: ack number %d receieved\n", ack.ack_no);
 
-            if(ack.ack_no == total_sequence){
+           /* if(ack.ack_no == total_sequence){
                 break; //all are received
-            }
-        }
-        
+            }*/
+       // }
+            //If legitimate ack number
+                //Stop the timer
+                //Send the number of packets in the window. For eg if previous ack =4 and 
+                //new ack =6 then advance window by two and send two packets
+                //Start the timer
+            //If legitimate ack number and end of file
+                //Send fin
+
         for(int i = 0; i < window_size; i ++) {
             struct packet p;
             initPacket(&p);
