@@ -177,74 +177,143 @@ int main(void)
       setTimeout(5000);
 
    bool stop = false;
+   int rec_ack = 0;
 
    while(1) {
         if(timeout) 
         {
             //Resend the window
+
+            int start_index = packet_vec.size() - window_size;
+
+                for(k = start_index; k < packet_vec.size(); k++) 
+                {
+                    printf ("packet %d size %d\n", total_sequence, packet_vec[k].size);
+                    if( nbytes = sendto (sockfd, &packet_vec[k], DATAGRAM_SIZE, 0,
+                        (struct sockaddr *) &their_addr, addr_len) < 0)
+                    {
+                        if( errno == EWOULDBLOCK ) {
+                            continue;
+                        }
+                        cout <<"sendto failed2";
+                    }
+
+               }
+               setTimeout(5000);
+
         }    
 
         struct packet ack;
         initPacket(&ack);
 
        // while(1){
-            if ((numbytes = recvfrom(sockfd, &ack, sizeof(ack) , 0,
-                (struct sockaddr *)&their_addr, &addr_len)) == -1) {
-                perror("recvfrom");
-                exit(1);
-            }
-              if (prob(0.4) || prob(0.5)) 
-             {
-                fprintf(stderr, "packet was corrupted or lost\n");
-                continue;
-            }
-            else
-                printf("Server: ack number %d receieved\n", ack.ack_no);
+
+        //wait for an ACK
+        if ((numbytes = recvfrom(sockfd, &ack, sizeof(ack) , 0,
+            (struct sockaddr *)&their_addr, &addr_len)) == -1) {
+            perror("recvfrom");
+            exit(1);
+
+            if(errno==EWOULDBLOCK) continue; //should account for hanging recvfrom
+        }
+
+        if (prob(80) || prob(80)) 
+         {
+            fprintf(stderr, "packet was corrupted or lost\n");
+            continue;
+        }
+        else
+            printf("Server: ack number %d receieved\n", ack.ack_no);
 
            /* if(ack.ack_no == total_sequence){
                 break; //all are received
             }*/
        // }
+
+        if(ack.ack_no >= rec_ack){
+            alarm(0);
+
+            int slide_num = (ack.ack_no - rec_ack);
+
+
+            for(int i = 0; i < slide_num; i++) {
+                struct packet p;
+                initPacket(&p);
+                packet_vec.push_back(p);
+
+                p.seq_no = total_sequence+1;
+                p.size = fread(p.data, 1, 1004, req_file);
+                printf ("Sender: size is %d\n", p.size);
+
+                packet_vec[total_sequence] = p;
+
+                printf ("packet %d size %d\n", total_sequence, packet_vec[total_sequence].size);
+                if( nbytes = sendto (sockfd, &packet_vec[total_sequence], DATAGRAM_SIZE, 0,
+                    (struct sockaddr *) &their_addr, addr_len) < 0)
+                {
+                    if( errno == EWOULDBLOCK ) {
+                        continue;
+                    }
+                    cout <<"sendto failed2";
+                }
+                total_sequence++;
+
+
+                if(feof(req_file) || ferror(req_file) ) 
+                {
+                    //done reading file
+                    stop = true;
+                    break;
+                }
+            }
+
+            if(stop) break;
+
+            rec_ack = ack.ack_no;
+            setTimeout(5000);
+
+        }
             //If legitimate ack number
                 //Stop the timer
+                //slides the window, 
                 //Send the number of packets in the window. For eg if previous ack =4 and 
                 //new ack =6 then advance window by two and send two packets
                 //Start the timer
             //If legitimate ack number and end of file
                 //Send fin
 
-        for(int i = 0; i < window_size; i ++) {
-            struct packet p;
-            initPacket(&p);
-            packet_vec.push_back(p);
+        // for(int i = 0; i < window_size; i ++) {
+        //     struct packet p;
+        //     initPacket(&p);
+        //     packet_vec.push_back(p);
 
-            p.seq_no = total_sequence+1;
-            p.size = fread(p.data, 1, 1004, req_file);
-            printf ("Sender: size is %d\n", p.size);
+        //     p.seq_no = total_sequence+1;
+        //     p.size = fread(p.data, 1, 1004, req_file);
+        //     printf ("Sender: size is %d\n", p.size);
 
-            packet_vec[total_sequence] = p;
+        //     packet_vec[total_sequence] = p;
 
-            printf ("packet %d size %d\n", total_sequence, packet_vec[total_sequence].size);
-            if( nbytes = sendto (sockfd, &packet_vec[total_sequence], DATAGRAM_SIZE, 0,
-                (struct sockaddr *) &their_addr, addr_len) < 0)
-            {
-                if( errno == EWOULDBLOCK ) {
-                    continue;
-                }
-                cout <<"sendto failed2";
-            }
-            total_sequence++;
+        //     printf ("packet %d size %d\n", total_sequence, packet_vec[total_sequence].size);
+        //     if( nbytes = sendto (sockfd, &packet_vec[total_sequence], DATAGRAM_SIZE, 0,
+        //         (struct sockaddr *) &their_addr, addr_len) < 0)
+        //     {
+        //         if( errno == EWOULDBLOCK ) {
+        //             continue;
+        //         }
+        //         cout <<"sendto failed2";
+        //     }
+        //     total_sequence++;
 
 
-            if(feof(req_file) || ferror(req_file) ) 
-            {
-                //done reading file
-                stop = true;
-                break;
-            }
-        }
+        //     if(feof(req_file) || ferror(req_file) ) 
+        //     {
+        //         //done reading file
+        //         stop = true;
+        //         break;
+        //     }
+        // }
 
-        if(stop) break;
+        // if(stop) break;
 
    }
 
@@ -273,10 +342,6 @@ int main(void)
         
     return 0;
 }
-
-
-
-
 
 
 
