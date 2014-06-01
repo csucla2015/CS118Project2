@@ -19,6 +19,7 @@
 #include <iostream>
 #include <time.h>
 #include "packet.h"
+#include <sys/time.h>
 
 #include "helper.h"
 
@@ -29,11 +30,12 @@ using namespace std;
 
 
 #define DATAGRAM_SIZE 1024 // change
-#define TIMEOUT 10000 //
+#define TIMEOUT 5 //
 #define MYPORT "5100"    // the port users will be connecting to
 
 
 #define MAXBUFLEN 100
+
 
 // get sockaddr, IPv4 or IPv6:
 void *get_in_addr(struct sockaddr *sa)
@@ -47,6 +49,14 @@ void *get_in_addr(struct sockaddr *sa)
 
 int main(void)
 {
+
+    struct timeval tim;  
+    double start_time;
+    double current_time;
+   
+
+
+
     char fileName[1004];  //Change 
     int sockfd;
     struct addrinfo hints, *servinfo, *p;
@@ -174,16 +184,27 @@ int main(void)
    }
    //We might also need a base variable.
    //According to the demp you star the timer immediately after sending the first packet(that is the timer for the first packet)
-      setTimeout(5000);
+      //setTimeout(5000);
+
+    gettimeofday(&tim, NULL);  
+    start_time = tim.tv_sec+(tim.tv_usec/1000000.0); 
+
 
    bool stop = false;
    int rec_ack = 0;
 
    while(1) {
-        if(timeout) 
+        cout<<"start_time: "<<start_time<<endl;
+        gettimeofday(&tim, NULL);  
+        current_time = tim.tv_sec+(tim.tv_usec/1000000.0);  
+        cout<<"current_time: "<<current_time<<endl;
+
+        cout<<"time difference: "<<current_time-start_time<<endl;
+
+        if( current_time-start_time > TIMEOUT )//timeout) 
         {
             //Resend the window
-
+            cout<<"resemding in progress";
             int start_index = packet_vec.size() - window_size;
 
                 for(k = start_index; k < packet_vec.size(); k++) 
@@ -199,7 +220,9 @@ int main(void)
                     }
 
                }
-               setTimeout(5000);
+               //setTimeout(5000);
+                 gettimeofday(&tim, NULL);  
+                 start_time = tim.tv_sec+(tim.tv_usec/1000000.0);  
 
         }    
 
@@ -209,6 +232,8 @@ int main(void)
        // while(1){
 
         //wait for an ACK
+
+        cout<<"this should be the last cout"<<endl;
         if ((numbytes = recvfrom(sockfd, &ack, sizeof(ack) , 0,
             (struct sockaddr *)&their_addr, &addr_len)) == -1) {
             perror("recvfrom");
@@ -217,7 +242,9 @@ int main(void)
             if(errno==EWOULDBLOCK) continue; //should account for hanging recvfrom
         }
 
-        if (prob(80) || prob(80)) 
+        cout<<"or is it"<<endl;
+
+        if (prob(40) || prob(50)) 
          {
             fprintf(stderr, "packet was corrupted or lost\n");
             continue;
@@ -231,7 +258,7 @@ int main(void)
        // }
 
         if(ack.ack_no >= rec_ack){
-            alarm(0);
+            //alarm(0);
 
             int slide_num = (ack.ack_no - rec_ack);
 
@@ -270,7 +297,9 @@ int main(void)
             if(stop) break;
 
             rec_ack = ack.ack_no;
-            setTimeout(5000);
+            //setTimeout(5000);
+                gettimeofday(&tim, NULL);  
+                  start_time = tim.tv_sec+(tim.tv_usec/1000000.0);  
 
         }
             //If legitimate ack number
@@ -337,6 +366,9 @@ int main(void)
     }
 
            
+    // gettimeofday(&tim, NULL);  
+    // double dTime2 = tim.tv_sec+(tim.tv_usec/1000000.0);  
+    // printf("%.6lf seconds elapsed until you will execute the program and see the result !!!\n", dTime2 - dTime1);  
 
     close(sockfd); 
         
