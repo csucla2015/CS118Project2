@@ -19,6 +19,7 @@
 #include <iostream>
 #include <time.h>
 #include "packet.h"
+
 #include "helper.h"
 
 #include <vector>
@@ -120,6 +121,7 @@ int main(void)
     inet_ntop(their_addr.ss_family,
         get_in_addr((struct sockaddr *)&their_addr),
         s, sizeof s));
+
     printf("listener: packet is %d bytes long\n", numbytes);
     buf[numbytes] = '\0';
     printf("listener: packet contains \"%s\"\n", buf);
@@ -132,6 +134,7 @@ int main(void)
     /////////////////////////////////////////////
     //Send initial window_size packets
     //////////////////////////////////////////////
+   
     int base = 0;
     int packetsSent =0;
 
@@ -169,10 +172,17 @@ int main(void)
             break;
         }
    }
+   //We might also need a base variable.
+   //According to the demp you star the timer immediately after sending the first packet(that is the timer for the first packet)
+      setTimeout(5000);
 
    bool stop = false;
 
    while(1) {
+        if(timeout) 
+        {
+            //Resend the window
+        }    
 
         struct packet ack;
         initPacket(&ack);
@@ -183,7 +193,13 @@ int main(void)
                 perror("recvfrom");
                 exit(1);
             }
-            printf("Server: ack number %d receieved\n", ack.ack_no);
+              if (prob(0.4) || prob(0.5)) 
+             {
+                fprintf(stderr, "packet was corrupted or lost\n");
+                continue;
+            }
+            else
+                printf("Server: ack number %d receieved\n", ack.ack_no);
 
             if(ack.ack_no == total_sequence){
                 break; //all are received
@@ -243,7 +259,7 @@ int main(void)
         }
         break;
     }
-      
+
            
 
     close(sockfd); 
