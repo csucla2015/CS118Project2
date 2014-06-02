@@ -7,6 +7,8 @@
 #include <strings.h>
 #include <sys/time.h>
 #include "packet.h"
+#include <iostream>
+
 
 
 
@@ -30,11 +32,6 @@ int prob( int a ) {
 volatile sig_atomic_t timeout = 0;
 
 
-void catch_alarm (int sig) /* signal handler */
-{
-    timeout = 1;
-    signal (sig, catch_alarm);
-}
 
 unsigned int setTimeout(unsigned int microseconds) {
     timeout = 0;

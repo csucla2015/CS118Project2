@@ -37,6 +37,18 @@ using namespace std;
 #define MAXBUFLEN 100
 
 
+
+
+void catch_alarm (int sig) /* signal handler */
+{
+    timeout = 1;
+    std::cout<<"entered catch_alarm\n";
+    signal (sig, catch_alarm);
+
+}
+
+
+
 // get sockaddr, IPv4 or IPv6:
 void *get_in_addr(struct sockaddr *sa)
 {
@@ -47,18 +59,24 @@ void *get_in_addr(struct sockaddr *sa)
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
+
+
 int main(void)
 {
 
-    struct timeval tim;  
-    double start_time;
-    double current_time;
+    // struct timeval tim;  
+    // double start_time;
+    // double current_time;
    
+    signal(SIGALRM, catch_alarm);
 
 
 
     char fileName[1004];  //Change 
     int sockfd;
+
+
+
     struct addrinfo hints, *servinfo, *p;
     int rv;
     int numbytes;
@@ -96,6 +114,9 @@ int main(void)
             continue;
         }
 
+        // int flags = fcntl(sockfd, F_GETFL);
+        
+
         if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
             close(sockfd);
             perror("listener: bind");
@@ -104,6 +125,9 @@ int main(void)
 
         break;
     }
+
+
+    //fcntl(sockfd, F_SETFL, O_NONBLOCK);
 
     if (p == NULL) {
         fprintf(stderr, "listener: failed to bind socket\n");
@@ -184,47 +208,51 @@ int main(void)
    }
    //We might also need a base variable.
    //According to the demp you star the timer immediately after sending the first packet(that is the timer for the first packet)
-      //setTimeout(5000);
+      setTimeout(5000);
 
-    gettimeofday(&tim, NULL);  
-    start_time = tim.tv_sec+(tim.tv_usec/1000000.0); 
+    // gettimeofday(&tim, NULL);  
+    // start_time = tim.tv_sec+(tim.tv_usec/1000000.0); 
 
 
    bool stop = false;
    int rec_ack = 0;
 
    while(1) {
-        cout<<"start_time: "<<start_time<<endl;
-        gettimeofday(&tim, NULL);  
-        current_time = tim.tv_sec+(tim.tv_usec/1000000.0);  
-        cout<<"current_time: "<<current_time<<endl;
+        // cout<<"start_time: "<<start_time<<endl;
+        // gettimeofday(&tim, NULL);  
+        // current_time = tim.tv_sec+(tim.tv_usec/1000000.0);  
+        // cout<<"current_time: "<<current_time<<endl;
 
-        cout<<"time difference: "<<current_time-start_time<<endl;
+        // cout<<"time difference: "<<current_time-start_time<<endl;
+        cout<<"timeout: "<<timeout<<endl;
 
-        if( current_time-start_time > TIMEOUT )//timeout) 
-        {
+        if(timeout){
+
+                    cout<<"resemding in progress";
+                    int start_index = packet_vec.size() - window_size;
+
+                        for(k = start_index; k < packet_vec.size(); k++) 
+                        {
+                            printf ("packet %d size %d\n", total_sequence, packet_vec[k].size);
+                            if( nbytes = sendto (sockfd, &packet_vec[k], DATAGRAM_SIZE, 0,
+                                (struct sockaddr *) &their_addr, addr_len) < 0)
+                            {
+                                if( errno == EWOULDBLOCK ) {
+                                    continue;
+                                }
+                                cout <<"sendto failed2";
+                            }
+
+                       }
+                       setTimeout(5000);
+            }
+
             //Resend the window
-            cout<<"resemding in progress";
-            int start_index = packet_vec.size() - window_size;
 
-                for(k = start_index; k < packet_vec.size(); k++) 
-                {
-                    printf ("packet %d size %d\n", total_sequence, packet_vec[k].size);
-                    if( nbytes = sendto (sockfd, &packet_vec[k], DATAGRAM_SIZE, 0,
-                        (struct sockaddr *) &their_addr, addr_len) < 0)
-                    {
-                        if( errno == EWOULDBLOCK ) {
-                            continue;
-                        }
-                        cout <<"sendto failed2";
-                    }
+                 // gettimeofday(&tim, NULL);  
+                 // start_time = tim.tv_sec+(tim.tv_usec/1000000.0);  
 
-               }
-               //setTimeout(5000);
-                 gettimeofday(&tim, NULL);  
-                 start_time = tim.tv_sec+(tim.tv_usec/1000000.0);  
-
-        }    
+          
 
         struct packet ack;
         initPacket(&ack);
@@ -233,16 +261,46 @@ int main(void)
 
         //wait for an ACK
 
-        cout<<"this should be the last cout"<<endl;
-        if ((numbytes = recvfrom(sockfd, &ack, sizeof(ack) , 0,
-            (struct sockaddr *)&their_addr, &addr_len)) == -1) {
-            perror("recvfrom");
-            exit(1);
 
-            if(errno==EWOULDBLOCK) continue; //should account for hanging recvfrom
+
+        while(1) {
+
+              struct timeval tv;
+              tv.tv_sec = 5;
+              tv.tv_usec = 0; //.5 seconds
+              if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv)) < 0) {
+                  perror("Error");
+              }
+
+            if ( (numbytes = recvfrom(sockfd, &ack, sizeof(ack) , 0,
+                (struct sockaddr *)&their_addr, &addr_len)) < 0 ) {
+            
+
+                    //timeout reached
+                    cout<<"resending in progress";
+                    int start_index = packet_vec.size() - window_size;
+
+                        for(k = start_index; k < packet_vec.size(); k++) 
+                        {
+                            printf ("packet %d size %d\n", k, packet_vec[k].size);
+                            if( nbytes = sendto (sockfd, &packet_vec[k], DATAGRAM_SIZE, 0,
+                                (struct sockaddr *) &their_addr, addr_len) < 0)
+                            {
+                                if( errno == EWOULDBLOCK ) {
+                                    continue;
+                                }
+                                cout <<"sendto failed2";
+                            }
+
+                       }
+                       setTimeout(5000);
+                       continue;
+
+            }
+            else break; //received something
         }
 
-        cout<<"or is it"<<endl;
+        
 
         if (prob(40) || prob(50)) 
          {
@@ -258,7 +316,7 @@ int main(void)
        // }
 
         if(ack.ack_no >= rec_ack){
-            //alarm(0);
+            alarm(0);
 
             int slide_num = (ack.ack_no - rec_ack);
 
@@ -297,9 +355,9 @@ int main(void)
             if(stop) break;
 
             rec_ack = ack.ack_no;
-            //setTimeout(5000);
-                gettimeofday(&tim, NULL);  
-                  start_time = tim.tv_sec+(tim.tv_usec/1000000.0);  
+            setTimeout(5000);
+                // gettimeofday(&tim, NULL);  
+                //   start_time = tim.tv_sec+(tim.tv_usec/1000000.0);  
 
         }
             //If legitimate ack number
