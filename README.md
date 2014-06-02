@@ -12,4 +12,6 @@ in another terminal:
 
 this will create a copy of <filename> called <copy_filename> in the same directory
 
+TODO:
+	If requesitng a file that doesnt exist, error out.
 
