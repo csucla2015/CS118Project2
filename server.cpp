@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
 
         packet_vec[total_sequence] = p;
 
-        printf ("packet %d size %d\n", total_sequence, packet_vec[total_sequence].size);
+        printf ("packet %d size %d\n", total_sequence+1, packet_vec[total_sequence].size);
         if( nbytes = sendto (sockfd, &packet_vec[total_sequence], PACKET_SIZE, 0,
             (struct sockaddr *) &their_addr, addr_len) < 0)
         {
@@ -207,7 +207,7 @@ int main(int argc, char *argv[])
    }
    //We might also need a base variable.
    //According to the demp you star the timer immediately after sending the first packet(that is the timer for the first packet)
-      setTimeout(5000);
+      //setTimeout(5000);
 
     // gettimeofday(&tim, NULL);  
     // start_time = tim.tv_sec+(tim.tv_usec/1000000.0); 
@@ -219,14 +219,14 @@ int main(int argc, char *argv[])
    while(1) {
         
        
-        if(timeout!=0)
-            cout<<"timeout: "<<timeout<<endl;
+        //if(timeout!=0)
+           // cout<<"timeout: "<<timeout<<endl;
         struct packet ack;
         customBzero(&ack);
         while(1) {
 
               struct timeval tv;
-              tv.tv_sec = 5;
+              tv.tv_sec = 2;
               tv.tv_usec = 0; //.5 seconds
               if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv)) < 0) {
                   perror("Error");
@@ -240,7 +240,7 @@ int main(int argc, char *argv[])
 
                         for(k = start_index; k < packet_vec.size(); k++) 
                         {
-                            printf ("packet %d size %d\n", k, packet_vec[k].size);
+                            printf ("packet %d size %d\n", k+1, packet_vec[k].size);
                             if( nbytes = sendto (sockfd, &packet_vec[k], PACKET_SIZE, 0,
                                 (struct sockaddr *) &their_addr, addr_len) < 0)
                             {
@@ -251,7 +251,7 @@ int main(int argc, char *argv[])
                             }
 
                        }
-                       setTimeout(5000);
+                       //setTimeout(5000);
                        continue;
 
             }
@@ -271,7 +271,7 @@ int main(int argc, char *argv[])
         struct packet ack1;
 
         if(ack.ack_no >= rec_ack){
-            alarm(0);
+            //alarm(0);
 
             int slide_num = (ack.ack_no - rec_ack);
 
@@ -289,7 +289,7 @@ int main(int argc, char *argv[])
 
                 packet_vec[total_sequence] = p;
 
-                printf ("packet %d size %d\n", total_sequence, packet_vec[total_sequence].size);
+                printf ("packet %d size %d\n", total_sequence+1, packet_vec[total_sequence].size);
                 if( nbytes = sendto (sockfd, &packet_vec[total_sequence], PACKET_SIZE, 0,
                     (struct sockaddr *) &their_addr, addr_len) < 0)
                 {
@@ -343,7 +343,7 @@ int main(int argc, char *argv[])
 
                                }
 
-                              setTimeout(5000);
+                              //setTimeout(5000);
                                continue;
                              }
                              rec_ack = ack1.ack_no;
@@ -351,7 +351,7 @@ int main(int argc, char *argv[])
                              cout << " Received Ack"<< ack1.ack_no << endl;
                             if(ack1.ack_no == total_sequence -1)
                             {
-                                alarm(0);
+                               // alarm(0);
                                 stop = true;
                                 break;
                             }
@@ -376,7 +376,7 @@ int main(int argc, char *argv[])
 
              
 
-            setTimeout(5000);
+            //setTimeout(5000);
                 // gettimeofday(&tim, NULL);  
                 //   start_time = tim.tv_sec+(tim.tv_usec/1000000.0);  
 

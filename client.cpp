@@ -102,8 +102,46 @@ int main(int argc, char *argv[])
         if( nbytes = recvfrom(sockfd, &request, 1024, 0, 
                                p->ai_addr, &p->ai_addrlen) >= 0)
         {
-            
-            cout << "Received Sequence Number : " << request.seq_no << endl;
+            if (prob(probCorr)) 
+             {
+                struct packet ack;
+                 customBzero(&ack);
+                 ack.ack_no = total_sequence;
+                  if ((numbytes = sendto(sockfd, &ack, 1024, 0, p->ai_addr, p->ai_addrlen)) == -1) {
+                    perror("talker: sendto");
+                    exit(1);
+                }
+                continue;
+            }
+
+            if(prob(probLoss)){
+
+              struct timeval tv;
+              tv.tv_sec = 2;
+              tv.tv_usec = 0; //.5 seconds
+              if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv)) < 0) {
+                  perror("Error");
+              }
+              if( nbytes = recvfrom(sockfd, &request, 1024, 0, 
+                               p->ai_addr, &p->ai_addrlen) < 0) {
+
+                struct packet ack;
+                 customBzero(&ack);
+                 ack.ack_no = total_sequence;
+                  if ((numbytes = sendto(sockfd, &ack, 1024, 0, p->ai_addr, p->ai_addrlen)) == -1) {
+                    perror("talker: sendto");
+                    exit(1);
+                }
+
+                //should we setsockopt back to 
+                continue;
+
+              }
+
+            }
+
+            if(request.fin != 1) cout << "Received Sequence Number : " << request.seq_no << endl;
+
             if (request.fin == 1)
             {
                 //terminate connection
@@ -121,16 +159,6 @@ int main(int argc, char *argv[])
                     exit(1);
                 }
 
-            }
-            else if (prob(probCorr) || prob(probLoss)) 
-             {
-                struct packet ack;
-                 customBzero(&ack);
-                 ack.ack_no = total_sequence;
-                  if ((numbytes = sendto(sockfd, &ack, 1024, 0, p->ai_addr, p->ai_addrlen)) == -1) {
-                    perror("talker: sendto");
-                    exit(1);
-                }
             }
             else  
             {
