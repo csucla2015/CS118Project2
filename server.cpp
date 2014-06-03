@@ -217,27 +217,10 @@ int main(int argc, char *argv[])
    int rec_ack = 0;
 
    while(1) {
+        
+       
         if(timeout!=0)
             cout<<"timeout: "<<timeout<<endl;
-        if(timeout){
-                    cout<<"It seens to have timed out, We are resending";
-                    int start_index = packet_vec.size() - window_size;
-
-                        for(k = start_index; k < packet_vec.size(); k++) 
-                        {
-                            printf ("packet %d size %d\n", total_sequence, packet_vec[k].size);
-                            if( nbytes = sendto (sockfd, &packet_vec[k], PACKET_SIZE, 0,
-                                (struct sockaddr *) &their_addr, addr_len) < 0)
-                            {
-                                if( errno == EWOULDBLOCK ) {
-                                    continue;
-                                }
-                                cout <<"sendto failed2";
-                            }
-
-                       }
-                       setTimeout(5000);
-            }
         struct packet ack;
         customBzero(&ack);
         while(1) {
@@ -283,13 +266,19 @@ int main(int argc, char *argv[])
         else
             printf("Server: ack number %d receieved\n", ack.ack_no);
 
+
+
+        struct packet ack1;
+
         if(ack.ack_no >= rec_ack){
             alarm(0);
 
             int slide_num = (ack.ack_no - rec_ack);
 
 
-            for(int i = 0; i < slide_num; i++) {
+            for(int i = 0; i < slide_num; i++) 
+            {
+             
                 struct packet p;
                 customBzero(&p);
                 packet_vec.push_back(p);
@@ -312,17 +301,81 @@ int main(int argc, char *argv[])
                 total_sequence++;
 
 
-                if(feof(req_file) || ferror(req_file) ) 
+                if((feof(req_file) || ferror(req_file))) 
                 {
-                    //done reading file
-                    stop = true;
-                    break;
+                    while(1)
+                    {
+                         customBzero(&ack1);
+
+                        if(ack.ack_no == (total_sequence-1) )
+                        {
+                            stop = true;                
+                            rec_ack = ack.ack_no;
+                            break;
+                        }  
+                        else
+                        {    
+
+                          struct timeval tv;
+                          tv.tv_sec = 5;
+                          tv.tv_usec = 0; //.5 seconds
+                          if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv)) < 0) 
+                          {
+                              perror("Error");
+                          }
+
+                          if ( (numbytes = recvfrom(sockfd, &ack1, sizeof(ack1) , 0, (struct sockaddr *)&their_addr, &addr_len)) < 0 ) {
+                            //timeout reached
+                            cout<<"We reached timeout, we are resending at this point" << endl;
+                            int start_index1 = packet_vec.size() - window_size;
+
+                                for(k = start_index1; k < packet_vec.size(); k++) 
+                                {
+                                    printf ("packet %d size %d\n", k, packet_vec[k].size);
+                                    if( nbytes = sendto (sockfd, &packet_vec[k], PACKET_SIZE, 0,
+                                        (struct sockaddr *) &their_addr, addr_len) < 0)
+                                    {
+                                        if( errno == EWOULDBLOCK ) {
+                                            continue;
+                                        }
+                                        cout <<"sendto failed2";
+                                    }
+
+                               }
+
+                              setTimeout(5000);
+                               continue;
+                             }
+                             rec_ack = ack1.ack_no;
+
+                             cout << " Received Ack"<< ack1.ack_no << endl;
+                            if(ack1.ack_no == total_sequence -1)
+                            {
+                                alarm(0);
+                                stop = true;
+                                break;
+                            }
+                        }    
+                    }    
+                                                       
                 }
+                if(stop) break;
+
             }
 
-            if(stop) break;
 
-            rec_ack = ack.ack_no;
+
+            if(stop==true)
+            {  
+
+                cout << "Final received ack is " << rec_ack << endl;
+                break;
+            } 
+            else   
+                rec_ack = ack.ack_no;
+
+             
+
             setTimeout(5000);
                 // gettimeofday(&tim, NULL);  
                 //   start_time = tim.tv_sec+(tim.tv_usec/1000000.0);  
