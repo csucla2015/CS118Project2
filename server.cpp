@@ -29,7 +29,7 @@
 using namespace std;
 
 
-#define DATAGRAM_SIZE 1024 // change
+#define PACKET_SIZE 1024 // change
 #define TIMEOUT 5 //
 #define MYPORT "5100"    // the port users will be connecting to
 
@@ -61,17 +61,20 @@ void *get_in_addr(struct sockaddr *sa)
 
 
 
-int main(void)
+int main(int argc, char *argv[])
 {
 
     // struct timeval tim;  
     // double start_time;
     // double current_time;
-   
+   if (argc != 3) {
+        fprintf(stderr,"usage: ./server probLoss probCorrupt\n");
+        exit(1);
+    }
     signal(SIGALRM, catch_alarm);
-
-
-
+    int probLoss = atoi(argv[1]);
+    int probCorrupt = atoi(argv[2]);
+    
     char fileName[1004];  //Change 
     int sockfd;
 
@@ -135,9 +138,8 @@ int main(void)
     }
 
     freeaddrinfo(servinfo);
-
-    printf("listener: waiting to recvfrom...\n");
-    initPacket(&request);
+    cout << " Waiting for the client to send us a file" << endl;
+    customBzero(&request);
 
     addr_len = sizeof their_addr;
     cout << addr_len;
@@ -147,14 +149,11 @@ int main(void)
         perror("recvfrom");
         exit(1);
     }
-        printf("listener: waiting to recvfrom1...\n");
     strcpy(fileName, request.data);
-    cout << fileName;
+    cout << "File name requested is " << fileName << endl;
     //////////////////////////////////////////////////////
-    printf("listener: got packet from %s\n",
-    inet_ntop(their_addr.ss_family,
-        get_in_addr((struct sockaddr *)&their_addr),
-        s, sizeof s));
+    cout << "We go a packet from "<< inet_ntop(their_addr.ss_family,get_in_addr((struct sockaddr *)&their_addr), s, sizeof s) << endl;
+    
 
     printf("listener: packet is %d bytes long\n", numbytes);
     buf[numbytes] = '\0';
@@ -179,7 +178,7 @@ int main(void)
     {
         // get the next chunk of the file
         struct packet p;
-        initPacket(&p);
+        customBzero(&p);
         packet_vec.push_back(p);
 
         p.seq_no = total_sequence+1;
@@ -190,7 +189,7 @@ int main(void)
         packet_vec[total_sequence] = p;
 
         printf ("packet %d size %d\n", total_sequence, packet_vec[total_sequence].size);
-        if( nbytes = sendto (sockfd, &packet_vec[total_sequence], DATAGRAM_SIZE, 0,
+        if( nbytes = sendto (sockfd, &packet_vec[total_sequence], PACKET_SIZE, 0,
             (struct sockaddr *) &their_addr, addr_len) < 0)
         {
             if( errno == EWOULDBLOCK ) {
@@ -218,23 +217,16 @@ int main(void)
    int rec_ack = 0;
 
    while(1) {
-        // cout<<"start_time: "<<start_time<<endl;
-        // gettimeofday(&tim, NULL);  
-        // current_time = tim.tv_sec+(tim.tv_usec/1000000.0);  
-        // cout<<"current_time: "<<current_time<<endl;
-
-        // cout<<"time difference: "<<current_time-start_time<<endl;
-        cout<<"timeout: "<<timeout<<endl;
-
+        if(timeout!=0)
+            cout<<"timeout: "<<timeout<<endl;
         if(timeout){
-
-                    cout<<"resemding in progress";
+                    cout<<"It seens to have timed out, We are resending";
                     int start_index = packet_vec.size() - window_size;
 
                         for(k = start_index; k < packet_vec.size(); k++) 
                         {
                             printf ("packet %d size %d\n", total_sequence, packet_vec[k].size);
-                            if( nbytes = sendto (sockfd, &packet_vec[k], DATAGRAM_SIZE, 0,
+                            if( nbytes = sendto (sockfd, &packet_vec[k], PACKET_SIZE, 0,
                                 (struct sockaddr *) &their_addr, addr_len) < 0)
                             {
                                 if( errno == EWOULDBLOCK ) {
@@ -246,23 +238,8 @@ int main(void)
                        }
                        setTimeout(5000);
             }
-
-            //Resend the window
-
-                 // gettimeofday(&tim, NULL);  
-                 // start_time = tim.tv_sec+(tim.tv_usec/1000000.0);  
-
-          
-
         struct packet ack;
-        initPacket(&ack);
-
-       // while(1){
-
-        //wait for an ACK
-
-
-
+        customBzero(&ack);
         while(1) {
 
               struct timeval tv;
@@ -274,16 +251,14 @@ int main(void)
 
             if ( (numbytes = recvfrom(sockfd, &ack, sizeof(ack) , 0,
                 (struct sockaddr *)&their_addr, &addr_len)) < 0 ) {
-            
-
                     //timeout reached
-                    cout<<"resending in progress";
+                    cout<<"We reached timeout, we are resending at this point" << endl;
                     int start_index = packet_vec.size() - window_size;
 
                         for(k = start_index; k < packet_vec.size(); k++) 
                         {
                             printf ("packet %d size %d\n", k, packet_vec[k].size);
-                            if( nbytes = sendto (sockfd, &packet_vec[k], DATAGRAM_SIZE, 0,
+                            if( nbytes = sendto (sockfd, &packet_vec[k], PACKET_SIZE, 0,
                                 (struct sockaddr *) &their_addr, addr_len) < 0)
                             {
                                 if( errno == EWOULDBLOCK ) {
@@ -300,20 +275,13 @@ int main(void)
             else break; //received something
         }
 
-        
-
-        if (prob(40) || prob(50)) 
+        if (prob(probCorrupt) || prob(probLoss)) 
          {
             fprintf(stderr, "packet was corrupted or lost\n");
             continue;
         }
         else
             printf("Server: ack number %d receieved\n", ack.ack_no);
-
-           /* if(ack.ack_no == total_sequence){
-                break; //all are received
-            }*/
-       // }
 
         if(ack.ack_no >= rec_ack){
             alarm(0);
@@ -323,7 +291,7 @@ int main(void)
 
             for(int i = 0; i < slide_num; i++) {
                 struct packet p;
-                initPacket(&p);
+                customBzero(&p);
                 packet_vec.push_back(p);
 
                 p.seq_no = total_sequence+1;
@@ -333,7 +301,7 @@ int main(void)
                 packet_vec[total_sequence] = p;
 
                 printf ("packet %d size %d\n", total_sequence, packet_vec[total_sequence].size);
-                if( nbytes = sendto (sockfd, &packet_vec[total_sequence], DATAGRAM_SIZE, 0,
+                if( nbytes = sendto (sockfd, &packet_vec[total_sequence], PACKET_SIZE, 0,
                     (struct sockaddr *) &their_addr, addr_len) < 0)
                 {
                     if( errno == EWOULDBLOCK ) {
@@ -360,58 +328,17 @@ int main(void)
                 //   start_time = tim.tv_sec+(tim.tv_usec/1000000.0);  
 
         }
-            //If legitimate ack number
-                //Stop the timer
-                //slides the window, 
-                //Send the number of packets in the window. For eg if previous ack =4 and 
-                //new ack =6 then advance window by two and send two packets
-                //Start the timer
-            //If legitimate ack number and end of file
-                //Send fin
-
-        // for(int i = 0; i < window_size; i ++) {
-        //     struct packet p;
-        //     initPacket(&p);
-        //     packet_vec.push_back(p);
-
-        //     p.seq_no = total_sequence+1;
-        //     p.size = fread(p.data, 1, 1004, req_file);
-        //     printf ("Sender: size is %d\n", p.size);
-
-        //     packet_vec[total_sequence] = p;
-
-        //     printf ("packet %d size %d\n", total_sequence, packet_vec[total_sequence].size);
-        //     if( nbytes = sendto (sockfd, &packet_vec[total_sequence], DATAGRAM_SIZE, 0,
-        //         (struct sockaddr *) &their_addr, addr_len) < 0)
-        //     {
-        //         if( errno == EWOULDBLOCK ) {
-        //             continue;
-        //         }
-        //         cout <<"sendto failed2";
-        //     }
-        //     total_sequence++;
-
-
-        //     if(feof(req_file) || ferror(req_file) ) 
-        //     {
-        //         //done reading file
-        //         stop = true;
-        //         break;
-        //     }
-        // }
-
-        // if(stop) break;
-
+           
    }
 
     fclose(req_file);
     struct packet terminate;
-    initPacket(&terminate);
+    customBzero(&terminate);
     terminate.fin = 1;
     //send the packet
     while(1) 
     {    
-        if( nbytes = sendto (sockfd, &terminate, DATAGRAM_SIZE, 0,
+        if( nbytes = sendto (sockfd, &terminate, PACKET_SIZE, 0,
                (struct sockaddr *) &their_addr, addr_len) < 0)
         {
             if( errno == EWOULDBLOCK ) 
@@ -422,11 +349,6 @@ int main(void)
         }
         break;
     }
-
-           
-    // gettimeofday(&tim, NULL);  
-    // double dTime2 = tim.tv_sec+(tim.tv_usec/1000000.0);  
-    // printf("%.6lf seconds elapsed until you will execute the program and see the result !!!\n", dTime2 - dTime1);  
 
     close(sockfd); 
         

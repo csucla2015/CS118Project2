@@ -13,7 +13,7 @@
 
 
 
-void initPacket(struct packet * pkt)
+void customBzero(struct packet * pkt)
 {
   
     pkt->ack_no=0;

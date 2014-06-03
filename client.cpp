@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
 
        
 
-    initPacket(&request);
+    customBzero(&request);
     strncpy(request.data,argv[2],1004);
 
     printf("%s",request.data);    
@@ -88,11 +88,11 @@ int main(int argc, char *argv[])
 
         
     fprintf (stderr, "waiting for message \n");
-    struct packet incoming;
-    struct packet outgoing;
-    initPacket(&incoming);
-    initPacket(&outgoing);
-    outgoing.ack_no = 1;
+    struct packet request;
+    struct packet response;
+    customBzero(&request);
+    customBzero(&response);
+    response.ack_no = 1;
     int cumAck = 0;    
     int nbytes = 0;
 
@@ -100,22 +100,22 @@ int main(int argc, char *argv[])
     while(1) {
 
         //wait for a packet
-        if( nbytes = recvfrom(sockfd, &incoming, 1024, 0, 
+        if( nbytes = recvfrom(sockfd, &request, 1024, 0, 
                                p->ai_addr, &p->ai_addrlen) < 0)
         {
             cout << "recvfrom failed";
         }
-        else if (incoming.fin == 1)
+        else if (request.fin == 1)
         {
             //terminate connection
             
             fclose(rec_file);
             break;
         } 
-        else if( incoming.seq_no != (total_sequence+1))
+        else if( request.seq_no != (total_sequence+1))
         {   
              struct packet ack;
-             initPacket(&ack);
+             customBzero(&ack);
              ack.ack_no = total_sequence;
               if ((numbytes = sendto(sockfd, &ack, 1024, 0, p->ai_addr, p->ai_addrlen)) == -1) {
                 perror("talker: sendto");
@@ -125,10 +125,10 @@ int main(int argc, char *argv[])
         }
         else  
         {
-             fwrite(incoming.data,1,incoming.size,rec_file);  
+             fwrite(request.data,1,request.size,rec_file);  
              struct packet ack;
-             initPacket(&ack);
-             ack.ack_no = incoming.seq_no;
+             customBzero(&ack);
+             ack.ack_no = request.seq_no;
              total_sequence++;
               if ((numbytes = sendto(sockfd, &ack, 1024, 0, p->ai_addr, p->ai_addrlen)) == -1) {
                 perror("talker: sendto");
@@ -140,8 +140,6 @@ int main(int argc, char *argv[])
 
 
     freeaddrinfo(servinfo);
-
-    //printf("talker: sent %d bytes to %s\n", numbytes, argv[1]);
     close(sockfd);
 
     return 0;
