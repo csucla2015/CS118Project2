@@ -30,11 +30,12 @@ int main(int argc, char *argv[])
     int rv;
     int numbytes;
     packet request;
-    if (argc != 3) {
-        fprintf(stderr,"usage: talker hostname filename\n");
+    if (argc != 5) {
+        fprintf(stderr,"usage: talker hostname filename probLoss probCorr\n");
         exit(1);
     }
-
+    int probLoss = atoi(argv[3]);
+    int probCorr = atoi(argv[4]);
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_DGRAM;
@@ -75,7 +76,6 @@ int main(int argc, char *argv[])
     }
     
     //variable for receiving response
-    packet response;
     //rspd_pkt.length = DATA_SIZE;
 
 
@@ -88,7 +88,6 @@ int main(int argc, char *argv[])
 
         
     fprintf (stderr, "waiting for message \n");
-    struct packet request;
     struct packet response;
     customBzero(&request);
     customBzero(&response);
@@ -108,7 +107,7 @@ int main(int argc, char *argv[])
         else if (request.fin == 1)
         {
             //terminate connection
-            
+            cout << "Fin Received " << endl;
             fclose(rec_file);
             break;
         } 
@@ -123,6 +122,16 @@ int main(int argc, char *argv[])
             }
 
         }
+        else if (prob(probCorr) || prob(probLoss)) 
+         {
+            struct packet ack;
+             customBzero(&ack);
+             ack.ack_no = total_sequence;
+              if ((numbytes = sendto(sockfd, &ack, 1024, 0, p->ai_addr, p->ai_addrlen)) == -1) {
+                perror("talker: sendto");
+                exit(1);
+            }
+        }
         else  
         {
              fwrite(request.data,1,request.size,rec_file);  
@@ -134,8 +143,12 @@ int main(int argc, char *argv[])
                 perror("talker: sendto");
                 exit(1);
             }
+            cout << "Sending Ack Number : " << ack.ack_no << endl;;
+
     
-          }
+        }
+        cout << "Received Sequence Number : " << request.seq_no << endl;;
+
     }   
 
 
