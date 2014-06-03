@@ -100,54 +100,59 @@ int main(int argc, char *argv[])
 
         //wait for a packet
         if( nbytes = recvfrom(sockfd, &request, 1024, 0, 
-                               p->ai_addr, &p->ai_addrlen) < 0)
+                               p->ai_addr, &p->ai_addrlen) >= 0)
         {
+            
+            cout << "Received Sequence Number : " << request.seq_no << endl;
+            if (request.fin == 1)
+            {
+                //terminate connection
+                cout << "Fin Received " << endl;
+                fclose(rec_file);
+                break;
+            } 
+            else if( request.seq_no != (total_sequence+1))
+            {   
+                 struct packet ack;
+                 customBzero(&ack);
+                 ack.ack_no = total_sequence;
+                  if ((numbytes = sendto(sockfd, &ack, 1024, 0, p->ai_addr, p->ai_addrlen)) == -1) {
+                    perror("talker: sendto");
+                    exit(1);
+                }
+
+            }
+            else if (prob(probCorr) || prob(probLoss)) 
+             {
+                struct packet ack;
+                 customBzero(&ack);
+                 ack.ack_no = total_sequence;
+                  if ((numbytes = sendto(sockfd, &ack, 1024, 0, p->ai_addr, p->ai_addrlen)) == -1) {
+                    perror("talker: sendto");
+                    exit(1);
+                }
+            }
+            else  
+            {
+                 fwrite(request.data,1,request.size,rec_file);  
+                 struct packet ack;
+                 customBzero(&ack);
+                 ack.ack_no = request.seq_no;
+                 total_sequence++;
+                  if ((numbytes = sendto(sockfd, &ack, 1024, 0, p->ai_addr, p->ai_addrlen)) == -1) {
+                    perror("talker: sendto");
+                    exit(1);
+                }
+                cout << "Sending Ack Number : " << ack.ack_no << endl;;
+
+        
+            }
+        }
+        else {
+
             cout << "recvfrom failed";
         }
-        else if (request.fin == 1)
-        {
-            //terminate connection
-            cout << "Fin Received " << endl;
-            fclose(rec_file);
-            break;
-        } 
-        else if( request.seq_no != (total_sequence+1))
-        {   
-             struct packet ack;
-             customBzero(&ack);
-             ack.ack_no = total_sequence;
-              if ((numbytes = sendto(sockfd, &ack, 1024, 0, p->ai_addr, p->ai_addrlen)) == -1) {
-                perror("talker: sendto");
-                exit(1);
-            }
-
-        }
-        else if (prob(probCorr) || prob(probLoss)) 
-         {
-            struct packet ack;
-             customBzero(&ack);
-             ack.ack_no = total_sequence;
-              if ((numbytes = sendto(sockfd, &ack, 1024, 0, p->ai_addr, p->ai_addrlen)) == -1) {
-                perror("talker: sendto");
-                exit(1);
-            }
-        }
-        else  
-        {
-             fwrite(request.data,1,request.size,rec_file);  
-             struct packet ack;
-             customBzero(&ack);
-             ack.ack_no = request.seq_no;
-             total_sequence++;
-              if ((numbytes = sendto(sockfd, &ack, 1024, 0, p->ai_addr, p->ai_addrlen)) == -1) {
-                perror("talker: sendto");
-                exit(1);
-            }
-            cout << "Sending Ack Number : " << ack.ack_no << endl;;
-
-    
-        }
-        cout << "Received Sequence Number : " << request.seq_no << endl;;
+        
 
     }   
 
