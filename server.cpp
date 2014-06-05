@@ -285,7 +285,12 @@ int main(int argc, char *argv[])
 
         struct packet ack1;
 
-        if(ack.ack_no > rec_ack && !feof(req_file)){
+        if(feof(req_file)) {
+            if(ack.ack_no == total_sequence) break;
+            else continue;
+        }
+
+        if(ack.ack_no > rec_ack){
             //alarm(0);
             cout << "Sliding Window " << endl;
             int slide_num = (ack.ack_no - rec_ack);
@@ -320,7 +325,7 @@ int main(int argc, char *argv[])
                     {
                          customBzero(&ack1);
 
-                        if(ack.ack_no == (total_sequence+1) )
+                        if(ack.ack_no == (total_sequence-1) )
                         {
                             stop = true;                
                             rec_ack = ack.ack_no;
