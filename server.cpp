@@ -31,21 +31,19 @@ using namespace std;
 
 #define PACKET_SIZE 1024 // change
 #define TIMEOUT 5 //
-#define MYPORT "5100"    // the port users will be connecting to
+#define MYPORT "5140"    // the port users will be connecting to
 
 
 #define MAXBUFLEN 100
 
 
+// void catch_alarm (int sig) /* signal handler */
+// {
+//     timeout = 1;
+//     std::cout<<"entered catch_alarm\n";
+//     signal (sig, catch_alarm);
 
-
-void catch_alarm (int sig) /* signal handler */
-{
-    timeout = 1;
-    std::cout<<"entered catch_alarm\n";
-    signal (sig, catch_alarm);
-
-}
+// }
 
 
 
@@ -67,13 +65,15 @@ int main(int argc, char *argv[])
     // struct timeval tim;  
     // double start_time;
     // double current_time;
-   if (argc != 3) {
-        fprintf(stderr,"usage: ./server probLoss probCorrupt\n");
+   if (argc != 4) {
+        fprintf(stderr,"usage: ./server window_size probLoss probCorrupt\n");
         exit(1);
     }
-    signal(SIGALRM, catch_alarm);
-    int probLoss = atoi(argv[1]);
-    int probCorrupt = atoi(argv[2]);
+    //signal(SIGALRM, catch_alarm);
+
+    int window_size = atoi(argv[1]);
+    int probLoss = atoi(argv[2]);
+    int probCorrupt = atoi(argv[3]);
     
     char fileName[1004];  //Change 
     int sockfd;
@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
     hints.ai_socktype = SOCK_DGRAM;
     hints.ai_flags = AI_PASSIVE; // use my IP
 
-    int window_size = 5;
+   // int window_size = 5;
     struct packet packets[window_size]; // change
 
     vector<packet> packet_vec;
@@ -133,12 +133,12 @@ int main(int argc, char *argv[])
     //fcntl(sockfd, F_SETFL, O_NONBLOCK);
 
     if (p == NULL) {
-        fprintf(stderr, "listener: failed to bind socket\n");
+        fprintf(stderr, "Server: failed to bind socket\n");
         return 2;
     }
 
     freeaddrinfo(servinfo);
-    cout << " Waiting for the client to send us a file" << endl;
+    cout << "Listening for client request" << endl;
     customBzero(&request);
 
     addr_len = sizeof their_addr;
@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
     strcpy(fileName, request.data);
     cout << "File name requested is " << fileName << endl;
     //////////////////////////////////////////////////////
-    cout << "We go a packet from "<< inet_ntop(their_addr.ss_family,get_in_addr((struct sockaddr *)&their_addr), s, sizeof s) << endl;
+    cout << "Request packet received from "<< inet_ntop(their_addr.ss_family,get_in_addr((struct sockaddr *)&their_addr), s, sizeof s) << endl;
     
 
     printf("listener: packet is %d bytes long\n", numbytes);
@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
             if ( (numbytes = recvfrom(sockfd, &ack, sizeof(ack) , 0,
                 (struct sockaddr *)&their_addr, &addr_len)) < 0 ) {
                     //timeout reached
-                    cout<<"We reached timeout, we are resending at this point" << endl;
+                    cout<<"Timeout reached; resending window" << endl;
                     int start_index = packet_vec.size() - window_size;
 
                         for(k = start_index; k < packet_vec.size(); k++) 

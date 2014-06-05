@@ -20,7 +20,7 @@ using namespace std;
 
 #include <sys/stat.h>
 
-#define SERVERPORT "5100"    // the port users will be connecting to
+#define SERVERPORT "5140"    // the port users will be connecting to
 
 int main(int argc, char *argv[])
 {
@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
         {
             if (prob(probCorr)) 
              {
-                struct packet ack;
+                 struct packet ack;
                  customBzero(&ack);
                  ack.ack_no = total_sequence;
                   if ((numbytes = sendto(sockfd, &ack, 1024, 0, p->ai_addr, p->ai_addrlen)) == -1) {
@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
                     exit(1);
                 }
 
-                //should we setsockopt back to 
+
                 continue;
 
               }
