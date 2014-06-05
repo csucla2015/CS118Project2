@@ -431,8 +431,42 @@ int main(int argc, char *argv[])
             }
             cout << "sendto failed1";
         }
-        break;
+        //break;
+        struct timeval tv;
+        tv.tv_sec = 0;
+        tv.tv_usec = 500;
+
+         if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv)) < 0) {
+                  perror("Error");
+              }
+            struct packet finack;
+         customBzero(&finack);
+         
+          if( nbytes = recvfrom(sockfd, &finack, 1024, 0, 
+                               p->ai_addr, &p->ai_addrlen) < 0) {
+            cout<<"Timeout reached waiting for FINACK from client; resending FIN"<<endl;
+            continue;
+
+          }
+          else {
+            //finack received
+            if(finack.fin == 1 && finack.ack_no == terminate.seq_no) break;
+            else continue;
+
+          }
     }
+
+    terminate.fin = 0;
+    terminate.ack_no = terminate.seq_no;
+    terminate.seq_no = 0;
+    cout << "ACK sent ack# " << terminate.ack_no << ", FIN 1, Content-Length: 0" << endl;
+
+    if( nbytes = sendto (sockfd, &terminate, PACKET_SIZE, 0,
+               (struct sockaddr *) &their_addr, addr_len) < 0)
+        {
+  
+            cout << "sendto failed1";
+        }
 
     close(sockfd); 
         

@@ -142,6 +142,7 @@ int main(int argc, char *argv[])
               if( nbytes = recvfrom(sockfd, &request, 1024, 0, 
                                p->ai_addr, &p->ai_addrlen) < 0) {
 
+                cerr<<"Timeout reached; resending ACK# "<<total_sequence<<endl;
                 struct packet ack;
                  customBzero(&ack);
                  ack.ack_no = total_sequence;
@@ -198,6 +199,52 @@ int main(int argc, char *argv[])
         
 
     }   
+
+
+
+      struct packet finack;
+     customBzero(&finack);
+     finack.ack_no = request.seq_no;
+     finack.fin = 1;
+
+
+    while(1) {
+          cout << "FINACK sent ack# " <<  finack.ack_no << ", FIN 1, Content-Length 0"  << endl;
+
+          if ((numbytes = sendto(sockfd, &finack, 1024, 0, p->ai_addr, p->ai_addrlen)) == -1) {
+            perror("talker: sendto");
+            exit(1);
+         }
+
+        struct timeval tv;
+        tv.tv_sec = 0;
+        tv.tv_usec = 500;
+
+         if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv)) < 0) {
+                  perror("Error");
+              }
+
+          struct packet ack_of_finack;
+         customBzero(&ack_of_finack);
+          if( nbytes = recvfrom(sockfd, &ack_of_finack, 1024, 0, 
+                               p->ai_addr, &p->ai_addrlen) < 0) {
+            cout<<"Timeout reached waiting for ACK of FINACK; resending"<<endl;
+            continue;
+
+          }
+          else {
+            //ack_of_finack received
+            
+            if(ack_of_finack.fin == 0){
+              cout << "ACK of FINACK received ACK# " << ack_of_finack.ack_no << ", FIN 0, Content-Length " << ack_of_finack.size  << endl;
+              break;
+            }
+            else continue;
+          }
+    }
+
+
+
 
 
     freeaddrinfo(servinfo);
