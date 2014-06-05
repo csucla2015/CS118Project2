@@ -346,7 +346,7 @@ int main(int argc, char *argv[])
                           if ( (numbytes = recvfrom(sockfd, &ack1, sizeof(ack1) , 0, (struct sockaddr *)&their_addr, &addr_len)) < 0 ) {
                             //timeout reached
                             cout<<"Timeout reached; resending window" << endl;
-                            int start_index1 = packet_vec.size() - window_size;
+                            int start_index1 = packet_vec.size() - window_size ;
 
                                 for(k = start_index1; k < packet_vec.size(); k++) 
                                 {
