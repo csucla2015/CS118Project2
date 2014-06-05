@@ -240,7 +240,7 @@ int main(int argc, char *argv[])
               cout << "ACK of FINACK received ACK# " << ack_of_finack.ack_no << ", FIN 0, Content-Length " << ack_of_finack.size  << endl;
               break;
             }
-            else continue;
+
           }
     }
 

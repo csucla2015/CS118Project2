@@ -432,6 +432,7 @@ int main(int argc, char *argv[])
             cout << "sendto failed1";
         }
         //break;
+
         struct timeval tv;
         tv.tv_sec = 0;
         tv.tv_usec = 500;
@@ -441,9 +442,10 @@ int main(int argc, char *argv[])
               }
             struct packet finack;
          customBzero(&finack);
-         
-          if( nbytes = recvfrom(sockfd, &finack, 1024, 0, 
-                               p->ai_addr, &p->ai_addrlen) < 0) {
+
+         if ( (numbytes = recvfrom(sockfd, &finack, sizeof(finack) , 0,
+                (struct sockaddr *)&their_addr, &addr_len)) < 0 ) {
+        
             cout<<"Timeout reached waiting for FINACK from client; resending FIN"<<endl;
             continue;
 
