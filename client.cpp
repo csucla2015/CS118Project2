@@ -175,7 +175,7 @@ int main(int argc, char *argv[])
             else  
             {
                  //cout << "Received Sequence Number: " << request.seq_no << endl;
-                 cout << "DATA received seq# " << (request.seq_no)*1004 << ", FIN 0, Content-Length " << request.size  << endl;
+                 cout << "DATA received seq# " << ((total_sequence)*1004)+request.size << ", FIN 0, Content-Length " << request.size  << endl;
 
                  fwrite(request.data,1,request.size,rec_file);  
                  struct packet ack;
@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
                     perror("talker: sendto");
                     exit(1);
                 }
-                cout << "DATA sent ack# " <<  ack.ack_no*1004 << ", FIN 0, Content-Length 0"  << endl;
+                cout << "DATA sent ack# " <<  ((ack.ack_no-1)*1004) + request.size << ", FIN 0, Content-Length 0"  << endl;
 
         
             }
