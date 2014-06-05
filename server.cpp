@@ -184,11 +184,9 @@ int main(int argc, char *argv[])
         p.seq_no = total_sequence+1;
 
         p.size = fread(p.data, 1, 1004, req_file);
-        printf ("Sender: size is %d\n", p.size);
 
         packet_vec[total_sequence] = p;
-
-        printf ("packet %d size %d\n", total_sequence+1, packet_vec[total_sequence].size);
+        cout << "DATA sent seq# " << (total_sequence+1)*1004 << " ,FIN 0, Content-Length " << packet_vec[total_sequence].size << endl;
         if( nbytes = sendto (sockfd, &packet_vec[total_sequence], PACKET_SIZE, 0,
             (struct sockaddr *) &their_addr, addr_len) < 0)
         {
@@ -264,7 +262,9 @@ int main(int argc, char *argv[])
             continue;
         }
         else
-            printf("Server: ack number %d receieved\n", ack.ack_no);
+        {
+            cout << "ACK received, ACK# " << ack.ack_no*1004 << " ,Content-Length : 0" << endl; 
+        } 
 
 
 
@@ -272,7 +272,7 @@ int main(int argc, char *argv[])
 
         if(ack.ack_no >= rec_ack){
             //alarm(0);
-
+            cout << "Sliding Window " << endl;
             int slide_num = (ack.ack_no - rec_ack);
 
 
@@ -285,11 +285,10 @@ int main(int argc, char *argv[])
 
                 p.seq_no = total_sequence+1;
                 p.size = fread(p.data, 1, 1004, req_file);
-                printf ("Sender: size is %d\n", p.size);
 
                 packet_vec[total_sequence] = p;
+                cout << "DATA sent seq# " << (total_sequence+1)*1004 << " ,FIN 0, Content-Length " << packet_vec[total_sequence].size << endl;
 
-                printf ("packet %d size %d\n", total_sequence+1, packet_vec[total_sequence].size);
                 if( nbytes = sendto (sockfd, &packet_vec[total_sequence], PACKET_SIZE, 0,
                     (struct sockaddr *) &their_addr, addr_len) < 0)
                 {
@@ -347,8 +346,7 @@ int main(int argc, char *argv[])
                                continue;
                              }
                              rec_ack = ack1.ack_no;
-
-                             cout << " Received Ack"<< ack1.ack_no << endl;
+                             cout << "ACK received, ACK# " << ack1.ack_no*1004 << " ,Content-Length : 0" << endl; 
                             if(ack1.ack_no == total_sequence -1)
                             {
                                // alarm(0);
@@ -368,7 +366,7 @@ int main(int argc, char *argv[])
             if(stop==true)
             {  
 
-                cout << "Final received ack is " << rec_ack << endl;
+                cout << "Final ACK received was, ACK# " << rec_ack*1004 << " ,Content-Length : 0" << endl; 
                 break;
             } 
             else   
@@ -389,8 +387,11 @@ int main(int argc, char *argv[])
     customBzero(&terminate);
     terminate.fin = 1;
     //send the packet
+
     while(1) 
     {    
+         cout << "DATA sent seq# " << (total_sequence)*1004 << " ,FIN 1, Content-Length " << packet_vec[total_sequence].size << endl;
+
         if( nbytes = sendto (sockfd, &terminate, PACKET_SIZE, 0,
                (struct sockaddr *) &their_addr, addr_len) < 0)
         {

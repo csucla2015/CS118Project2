@@ -94,16 +94,18 @@ int main(int argc, char *argv[])
     response.ack_no = 1;
     int cumAck = 0;    
     int nbytes = 0;
-
+    bool flag1;
     int total_sequence = 0;
     while(1) {
-
+        flag1 =false;
         //wait for a packet
         if( nbytes = recvfrom(sockfd, &request, 1024, 0, 
                                p->ai_addr, &p->ai_addrlen) >= 0)
         {
             if (prob(probCorr)) 
              {
+                 cout << "Packet Corrupted" << endl;
+                 cout << "Expecting Sequence number " << total_sequence+1 << endl;
                  struct packet ack;
                  customBzero(&ack);
                  ack.ack_no = total_sequence;
@@ -111,11 +113,14 @@ int main(int argc, char *argv[])
                     perror("talker: sendto");
                     exit(1);
                 }
+                flag1=true;
                 continue;
             }
 
             if(prob(probLoss)){
-
+              cout << "Packet Loss" << endl;
+              cout <<  "Expecting sequence number " <<total_sequence+1 << endl;
+              flag1=true;
               struct timeval tv;
               tv.tv_sec = 2;
               tv.tv_usec = 0; //.5 seconds
@@ -140,7 +145,7 @@ int main(int argc, char *argv[])
 
             }
 
-            if(request.fin != 1) cout << "Received Sequence Number : " << request.seq_no << endl;
+          //  if(request.fin != 1 && flag1 == false) 
 
             if (request.fin == 1)
             {
@@ -151,17 +156,23 @@ int main(int argc, char *argv[])
             } 
             else if( request.seq_no != (total_sequence+1))
             {   
+
                  struct packet ack;
                  customBzero(&ack);
                  ack.ack_no = total_sequence;
+                  cout << "DATA sent ack# " << (total_sequence)*1004 << " ,FIN 1, Content-Length 0"  << endl;
+
                   if ((numbytes = sendto(sockfd, &ack, 1024, 0, p->ai_addr, p->ai_addrlen)) == -1) {
                     perror("talker: sendto");
                     exit(1);
                 }
 
+
             }
             else  
             {
+                 cout << "Received Sequence Number : " << request.seq_no << endl;
+
                  fwrite(request.data,1,request.size,rec_file);  
                  struct packet ack;
                  customBzero(&ack);
@@ -178,7 +189,7 @@ int main(int argc, char *argv[])
         }
         else {
 
-            cout << "recvfrom failed";
+           // cout << "recvfrom failed";
         }
         
 
