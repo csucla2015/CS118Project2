@@ -177,7 +177,8 @@ int main(int argc, char *argv[])
             }
             else  
             {
-                 cout << "DATA received seq# " << ((total_sequence)*1004)+request.size << ", FIN 0, Content-Length " << request.size  << endl;
+                 //cout << "Total sequence is " <<  total_sequence << endl;
+                 cout << "DATA received seq# " << ((total_sequence)*1004)<< ", FIN 0, Content-Length " << request.size  << endl;
                  fwrite(request.data,1,request.size,rec_file);  
                  struct packet ack;
                  customBzero(&ack);
