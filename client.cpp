@@ -107,7 +107,8 @@ int main(int argc, char *argv[])
             if (request.fin == 1)
             {
                 //terminate connection
-                cout << "Fin Received " << endl;
+                 cout << "FIN received seq# " << request.seq_no << ", FIN 1, Content-Length " << request.size  << endl;
+
                 fclose(rec_file);
                 break;
             } 
@@ -115,7 +116,8 @@ int main(int argc, char *argv[])
 
             if (prob(probCorr)) 
              {
-                 cout << "Packet Corrupted: Expecting Sequence number " << total_sequence+1 << endl;
+
+                 cout << "Packet Corrupted: Expecting Sequence number " << ((total_sequence)*1004)+request.size << endl;
                  struct packet ack;
                  customBzero(&ack);
                  ack.ack_no = total_sequence;
@@ -128,12 +130,12 @@ int main(int argc, char *argv[])
             }
 
             if(prob(probLoss)){
-              cout <<  "Packet Loss: Expecting Sequence number " <<total_sequence+1 << endl;
+              cout <<  "Packet Loss: Expecting Sequence number " <<((total_sequence)*1004)+request.size << endl;
               flag1=true;
 
               struct timeval tv;
-              tv.tv_sec = 2;
-              tv.tv_usec = 0; //.5 seconds
+              tv.tv_sec = 0;
+              tv.tv_usec = 500; //.5 seconds
               if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv)) < 0) {
                   perror("Error");
               }

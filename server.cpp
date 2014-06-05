@@ -238,8 +238,8 @@ int main(int argc, char *argv[])
         while(1) {
 
               struct timeval tv;
-              tv.tv_sec = 2;
-              tv.tv_usec = 0; //.5 seconds
+              tv.tv_sec = 0;
+              tv.tv_usec = 500; //.5 seconds
               if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv)) < 0) {
                   perror("Error");
               }
@@ -336,8 +336,8 @@ int main(int argc, char *argv[])
                         {    
 
                           struct timeval tv;
-                          tv.tv_sec = 5;
-                          tv.tv_usec = 0; //.5 seconds
+                          tv.tv_sec = 0;
+                          tv.tv_usec = 500; //.5 seconds
                           if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv)) < 0) 
                           {
                               perror("Error");
@@ -414,13 +414,13 @@ int main(int argc, char *argv[])
     fclose(req_file);
     struct packet terminate;
     customBzero(&terminate);
-    terminate.seq_no = total_sequence;
+    terminate.seq_no = ((total_sequence-1)*1004) + packet_vec[total_sequence-1].size ;
     terminate.fin = 1;
     //send the packet
 
     while(1) 
     {    
-         cout << "DATA sent seq# " << terminate.seq_no << ", FIN 1, Content-Length: " << packet_vec[total_sequence].size << endl;
+         cout << "DATA sent seq# " << ((total_sequence-1)*1004) + packet_vec[total_sequence-1].size << ", FIN 1, Content-Length: " << packet_vec[total_sequence].size << endl;
 
         if( nbytes = sendto (sockfd, &terminate, PACKET_SIZE, 0,
                (struct sockaddr *) &their_addr, addr_len) < 0)
