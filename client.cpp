@@ -66,10 +66,9 @@ int main(int argc, char *argv[])
     customBzero(&request);
     strncpy(request.data,argv[2],1004);
 
-    printf("%s",request.data);    
+    printf("Requesting file %s from server\n",request.data);    
 
     if ((numbytes = sendto(sockfd, &request, 1024, 0,
-
              p->ai_addr, p->ai_addrlen)) == -1) {
         perror("talker: sendto");
         exit(1);
@@ -87,7 +86,7 @@ int main(int argc, char *argv[])
     FILE* rec_file = fopen(buf, "wb");
 
         
-    fprintf (stderr, "waiting for message \n");
+    //fprintf (stderr, "waiting for message \n");
     struct packet response;
     customBzero(&request);
     customBzero(&response);
@@ -102,10 +101,21 @@ int main(int argc, char *argv[])
         if( nbytes = recvfrom(sockfd, &request, 1024, 0, 
                                p->ai_addr, &p->ai_addrlen) >= 0)
         {
+
+
+
+            if (request.fin == 1)
+            {
+                //terminate connection
+                cout << "Fin Received " << endl;
+                fclose(rec_file);
+                break;
+            } 
+
+
             if (prob(probCorr)) 
              {
-                 cout << "Packet Corrupted" << endl;
-                 cout << "Expecting Sequence number " << total_sequence+1 << endl;
+                 cout << "Packet Corrupted: Expecting Sequence number " << total_sequence+1 << endl;
                  struct packet ack;
                  customBzero(&ack);
                  ack.ack_no = total_sequence;
@@ -118,9 +128,9 @@ int main(int argc, char *argv[])
             }
 
             if(prob(probLoss)){
-              cout << "Packet Loss" << endl;
-              cout <<  "Expecting sequence number " <<total_sequence+1 << endl;
+              cout <<  "Packet Loss: Expecting Sequence number " <<total_sequence+1 << endl;
               flag1=true;
+
               struct timeval tv;
               tv.tv_sec = 2;
               tv.tv_usec = 0; //.5 seconds
@@ -147,14 +157,7 @@ int main(int argc, char *argv[])
 
           //  if(request.fin != 1 && flag1 == false) 
 
-            if (request.fin == 1)
-            {
-                //terminate connection
-                cout << "Fin Received " << endl;
-                fclose(rec_file);
-                break;
-            } 
-            else if( request.seq_no != (total_sequence+1))
+            if( request.seq_no != (total_sequence+1))
             {   
 
                  struct packet ack;
@@ -171,8 +174,8 @@ int main(int argc, char *argv[])
             }
             else  
             {
-                 cout << "Received Sequence Number : " << request.seq_no << endl;
-                 cout << "DATA received seq# " << (request.seq_no)*1004 << " ,FIN 0, Content-Length " << request.size  << endl;
+                 //cout << "Received Sequence Number: " << request.seq_no << endl;
+                 cout << "DATA received seq# " << (request.seq_no)*1004 << ", FIN 0, Content-Length " << request.size  << endl;
 
                  fwrite(request.data,1,request.size,rec_file);  
                  struct packet ack;
@@ -183,7 +186,7 @@ int main(int argc, char *argv[])
                     perror("talker: sendto");
                     exit(1);
                 }
-                cout << "DATA sent ack# " <<  ack.ack_no*1004 << " ,FIN 0, Content-Length 0"  << endl;
+                cout << "DATA sent ack# " <<  ack.ack_no*1004 << ", FIN 0, Content-Length 0"  << endl;
 
         
             }
