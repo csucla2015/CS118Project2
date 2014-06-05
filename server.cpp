@@ -200,7 +200,7 @@ int main(int argc, char *argv[])
         p.size = fread(p.data, 1, 1004, req_file);
 
         packet_vec[total_sequence] = p;
-        cout << "DATA sent seq# " << (total_sequence+1)*1004 << ", FIN 0, Content-Length: " << packet_vec[total_sequence].size << endl;
+        cout << "DATA sent seq# " << (total_sequence)*1004 << ", FIN 0, Content-Length: " << packet_vec[total_sequence].size << endl;
         if( nbytes = sendto (sockfd, &packet_vec[total_sequence], PACKET_SIZE, 0,
             (struct sockaddr *) &their_addr, addr_len) < 0)
         {
@@ -253,7 +253,7 @@ int main(int argc, char *argv[])
                         for(k = start_index; k < packet_vec.size(); k++) 
                         {
                             //printf ("packet %d size %d\n", k+1, packet_vec[k].size);
-                            cout << "DATA sent seq# " << (k+1)*1004 << ", FIN: 0, Content-Length: " << packet_vec[k].size << endl;
+                            cout << "DATA sent seq# " << (k)*1004 << ", FIN: 0, Content-Length: " << packet_vec[k].size << endl;
                             if( nbytes = sendto (sockfd, &packet_vec[k], PACKET_SIZE, 0,
                                 (struct sockaddr *) &their_addr, addr_len) < 0)
                             {
@@ -307,7 +307,7 @@ int main(int argc, char *argv[])
 
                     packet_vec[total_sequence] = p;
 
-                    cout << "DATA sent seq# " << (total_sequence*1004) + packet_vec[total_sequence].size << ", FIN: 0, Content-Length: " << packet_vec[total_sequence].size << endl;
+                    cout << "DATA sent seq# " << ((total_sequence-1)*1004) + packet_vec[total_sequence-1].size << ", FIN: 0, Content-Length: " << packet_vec[total_sequence].size << endl;
 
                     if( nbytes = sendto (sockfd, &packet_vec[total_sequence], PACKET_SIZE, 0,
                         (struct sockaddr *) &their_addr, addr_len) < 0)
@@ -351,7 +351,7 @@ int main(int argc, char *argv[])
                                 for(k = start_index1; k < packet_vec.size(); k++) 
                                 {
                                     //printf ("packet %d size %d\n", k, packet_vec[k].size);
-                                    cout << "DATA sent seq# " << (k*1004) + packet_vec[k].size << ", FIN: 0, Content-Length: " << packet_vec[k].size << endl;
+                                    cout << "DATA sent seq# " << ((k-1)*1004) + packet_vec[k-1].size << ", FIN: 0, Content-Length: " << packet_vec[k].size << endl;
 
                                     if( nbytes = sendto (sockfd, &packet_vec[k], PACKET_SIZE, 0,
                                         (struct sockaddr *) &their_addr, addr_len) < 0)
