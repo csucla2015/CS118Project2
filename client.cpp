@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
                  struct packet ack;
                  customBzero(&ack);
                  ack.ack_no = total_sequence;
-                  cout << "DATA sent ack# " << (total_sequence)*1004 << " ,FIN 1, Content-Length 0"  << endl;
+
 
                   if ((numbytes = sendto(sockfd, &ack, 1024, 0, p->ai_addr, p->ai_addrlen)) == -1) {
                     perror("talker: sendto");
@@ -172,6 +172,7 @@ int main(int argc, char *argv[])
             else  
             {
                  cout << "Received Sequence Number : " << request.seq_no << endl;
+                 cout << "DATA received seq# " << (request.seq_no)*1004 << " ,FIN 0, Content-Length " << request.size  << endl;
 
                  fwrite(request.data,1,request.size,rec_file);  
                  struct packet ack;
@@ -182,7 +183,7 @@ int main(int argc, char *argv[])
                     perror("talker: sendto");
                     exit(1);
                 }
-                cout << "Sending Ack Number : " << ack.ack_no << endl;;
+                cout << "DATA sent ack# " <<  ack.ack_no*1004 << " ,FIN 0, Content-Length 0"  << endl;
 
         
             }
