@@ -31,7 +31,7 @@ using namespace std;
 
 #define PACKET_SIZE 1024 // change
 #define TIMEOUT 5 //
-#define MYPORT "5140"    // the port users will be connecting to
+//#define MYPORT "5140"    // the port users will be connecting to
 
 
 #define MAXBUFLEN 100
@@ -65,15 +65,15 @@ int main(int argc, char *argv[])
     // struct timeval tim;  
     // double start_time;
     // double current_time;
-   if (argc != 4) {
-        fprintf(stderr,"usage: ./server window_size probLoss probCorrupt\n");
+   if (argc != 5) {
+        fprintf(stderr,"usage: ./server port_number indow_size probLoss probCorrupt\n");
         exit(1);
     }
     //signal(SIGALRM, catch_alarm);
-
-    int window_size = atoi(argv[1]);
-    int probLoss = atoi(argv[2]);
-    int probCorrupt = atoi(argv[3]);
+    char* port_number = argv[1];
+    int window_size = atoi(argv[2]);
+    int probLoss = atoi(argv[3]);
+    int probCorrupt = atoi(argv[4]);
     
     char fileName[1004];  //Change 
     int sockfd;
@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
 
     int nbytes = 0;
 
-    if ((rv = getaddrinfo(NULL, MYPORT, &hints, &servinfo)) != 0) {
+    if ((rv = getaddrinfo(NULL, port_number, &hints, &servinfo)) != 0) {
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
         return 1;
     }

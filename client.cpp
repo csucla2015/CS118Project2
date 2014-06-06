@@ -20,7 +20,7 @@ using namespace std;
 
 #include <sys/stat.h>
 
-#define SERVERPORT "5140"    // the port users will be connecting to
+//#define SERVERPORT "5140"    // the port users will be connecting to
 
 int main(int argc, char *argv[])
 {
@@ -30,17 +30,18 @@ int main(int argc, char *argv[])
     int rv;
     int numbytes;
     packet request;
-    if (argc != 5) {
-        fprintf(stderr,"usage: talker hostname filename probLoss probCorr\n");
+    if (argc != 6) {
+        fprintf(stderr,"usage: ./client hostname server_port filename probLoss probCorr\n");
         exit(1);
     }
-    int probLoss = atoi(argv[3]);
-    int probCorr = atoi(argv[4]);
+
+    int probLoss = atoi(argv[4]);
+    int probCorr = atoi(argv[5]);
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_DGRAM;
 
-    if ((rv = getaddrinfo(argv[1], SERVERPORT, &hints, &servinfo)) != 0) {
+    if ((rv = getaddrinfo(argv[1], argv[2], &hints, &servinfo)) != 0) {
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
         return 1;
     }
@@ -64,7 +65,7 @@ int main(int argc, char *argv[])
        
 
     customBzero(&request);
-    strncpy(request.data,argv[2],1004);
+    strncpy(request.data,argv[3],1004);
 
     printf("Requesting file %s from server\n",request.data);    
 
@@ -80,9 +81,9 @@ int main(int argc, char *argv[])
 
     //creating a file name with copy_ appended to the front
     char* c = "copy_";
-    int len = strlen(argv[2]);
+    int len = strlen(argv[3]);
     char buf[len+6];
-    snprintf(buf, sizeof(buf), "%s%s", c, argv[2]);
+    snprintf(buf, sizeof(buf), "%s%s", c, argv[3]);
     FILE* rec_file = fopen(buf, "wb");
 
         
