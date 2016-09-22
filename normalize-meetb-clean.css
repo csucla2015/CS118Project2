@@ -8,7 +8,6 @@ html {
 body {
     margin: 0
 }
-
 article,
 aside,
 details,
@@ -592,12 +591,14 @@ header .menu::after {
 }
 .steps .step-prompt ol {
     background: #000;
+    padding: 2px 6px;
     color: #fff;
     border-radius: 0 0 8px 8px
 }
 .steps .step-prompt ol li {
     list-style: none;
     font-weight: 600;
+    margin: 3px 0
 }
 .steps .step-prompt.unix li:before {
     content: '~$ ';
@@ -612,8 +613,8 @@ header .menu::after {
     }
     .steps .step-item,
     .steps .step-item-tools {
-        margin: 10px auto 10px;
-        width: 10px
+        margin: 20px auto 25px;
+        width: 50px
     }
     .steps .step-item span {
         margin: 0
